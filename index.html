@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 m-4">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Welcome to My Vercel Demo</h1>
+        
+        <div class="space-y-4">
+            <button id="colorButton" 
+                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition-colors">
+                Change Background Color
+            </button>
+            
+            <div id="counter" class="text-center">
+                <p class="text-xl font-semibold text-gray-700">Counter: <span id="count">0</span></p>
+                <button id="incrementButton" 
+                        class="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition-colors">
+                    Increment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Counter functionality
+        let count = 0;
+        const countElement = document.getElementById('count');
+        const incrementButton = document.getElementById('incrementButton');
+        
+        incrementButton.addEventListener('click', () => {
+            count++;
+            countElement.textContent = count;
+        });
+
+        // Background color change functionality
+        const colorButton = document.getElementById('colorButton');
+        const colors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-pink-100', 'bg-yellow-100'];
+        let currentColorIndex = 0;
+
+        colorButton.addEventListener('click', () => {
+            document.body.classList.remove(colors[currentColorIndex]);
+            currentColorIndex = (currentColorIndex + 1) % colors.length;
+            document.body.classList.add(colors[currentColorIndex]);
+        });
+    </script>
+</body>
+</html>
