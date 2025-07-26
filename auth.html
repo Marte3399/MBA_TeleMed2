@@ -1,11 +1,314 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autenticação - TeleMed</title>
-    <link rel="stylesheet" href="css/auth.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .auth-header {
+            background: #4f46e5;
+            color: white;
+            padding: 30px 20px 20px;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .tab-button {
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .tab-button.active,
+        .tab-button:hover {
+            background: white;
+            color: #4f46e5;
+            border-color: white;
+        }
+
+        .auth-form {
+            padding: 30px;
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .auth-button {
+            width: 100%;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .auth-button:hover {
+            background: #4338ca;
+        }
+
+        .auth-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px;
+            margin: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #dc2626;
+            display: none;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #059669;
+            padding: 12px;
+            margin: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #059669;
+            display: none;
+        }
+
+        .loading {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+        .form-group input:invalid {
+            border-color: #ef4444;
+        }
+
+        .form-group input:valid {
+            border-color: #10b981;
+        }
+
+        .auth-button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .auth-form {
+            transition: all 0.3s ease;
+        }
+
+        .error-message,
+        .success-message {
+            transition: all 0.3s ease;
+            transform: translateY(-10px);
+            opacity: 0;
+        }
+
+        .error-message.show,
+        .success-message.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .form-group input:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+
+        .password-strength {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .strength-weak {
+            background: #ef4444;
+            width: 33%;
+        }
+
+        .strength-medium {
+            background: #f59e0b;
+            width: 66%;
+        }
+
+        .strength-strong {
+            background: #10b981;
+            width: 100%;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .auth-header {
+                padding: 20px 15px 15px;
+            }
+
+            .auth-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .auth-form {
+                padding: 20px;
+            }
+
+            .auth-button {
+                padding: 14px;
+                font-size: 18px;
+            }
+
+            .form-group input {
+                padding: 14px;
+                font-size: 16px;
+            }
+
+            .tab-button {
+                padding: 10px 16px;
+                font-size: 16px;
+            }
+        }
+    </style>
 </head>
+
 <body>
     <div class="container">
         <div class="auth-card">
@@ -21,11 +324,13 @@
             <form id="loginForm" class="auth-form active">
                 <div class="form-group">
                     <label for="loginEmail">Email</label>
-                    <input type="email" id="loginEmail" required autocomplete="email" aria-describedby="loginEmailError">
+                    <input type="email" id="loginEmail" required autocomplete="email"
+                        aria-describedby="loginEmailError">
                 </div>
                 <div class="form-group">
                     <label for="loginPassword">Senha</label>
-                    <input type="password" id="loginPassword" required autocomplete="current-password" aria-describedby="loginPasswordError">
+                    <input type="password" id="loginPassword" required autocomplete="current-password"
+                        aria-describedby="loginPasswordError">
                 </div>
                 <button type="submit" class="auth-button">Entrar</button>
             </form>
@@ -34,19 +339,23 @@
             <form id="registerForm" class="auth-form">
                 <div class="form-group">
                     <label for="registerName">Nome</label>
-                    <input type="text" id="registerName" required autocomplete="name" aria-describedby="registerNameError">
+                    <input type="text" id="registerName" required autocomplete="name"
+                        aria-describedby="registerNameError">
                 </div>
                 <div class="form-group">
                     <label for="registerEmail">Email</label>
-                    <input type="email" id="registerEmail" required autocomplete="email" aria-describedby="registerEmailError">
+                    <input type="email" id="registerEmail" required autocomplete="email"
+                        aria-describedby="registerEmailError">
                 </div>
                 <div class="form-group">
                     <label for="registerPassword">Senha</label>
-                    <input type="password" id="registerPassword" required minlength="6" autocomplete="new-password" aria-describedby="passwordHint">
+                    <input type="password" id="registerPassword" required minlength="6" autocomplete="new-password"
+                        aria-describedby="passwordHint">
                     <div class="password-strength">
                         <div id="passwordStrengthBar" class="password-strength-bar"></div>
                     </div>
-                    <small id="passwordHint" class="text-gray-500 text-sm mt-1">Mínimo 6 caracteres com letras e números</small>
+                    <small id="passwordHint" class="text-gray-500 text-sm mt-1">Mínimo 6 caracteres com letras e
+                        números</small>
                 </div>
                 <button type="submit" class="auth-button">Cadastrar</button>
             </form>
@@ -61,10 +370,10 @@
         // Configuração do Supabase (inline)
         const SUPABASE_URL = 'https://xfgpoixiqppajhgkcwse.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZ3BvaXhpcXBwYWpoZ2tjd3NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDYyNTEsImV4cCI6MjA2Njc4MjI1MX0.5zEXy_CnqnJYxEcdi_L3Qd_VrgyM2jiB40VLSr6brXY';
-        
+
         // Inicializar cliente Supabase
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
+
         // Elementos do DOM
         const loginTab = document.getElementById('loginTab');
         const registerTab = document.getElementById('registerTab');
@@ -104,7 +413,7 @@
             errorMessage.classList.add('show');
             successMessage.style.display = 'none';
             successMessage.classList.remove('show');
-            
+
             // Adicionar shake animation ao formulário
             const activeForm = document.querySelector('.auth-form.active');
             activeForm.classList.add('shake');
@@ -149,11 +458,11 @@
         function isValidPassword(password) {
             if (password.length < 6) return false;
             if (password.length > 128) return false;
-            
+
             // Verificar se tem pelo menos uma letra e um número
             const hasLetter = /[a-zA-Z]/.test(password);
             const hasNumber = /\d/.test(password);
-            
+
             return hasLetter && hasNumber;
         }
 
@@ -161,7 +470,7 @@
         function isValidName(name) {
             if (!name || name.length < 2) return false;
             if (name.length > 100) return false;
-            
+
             // Permitir apenas letras, espaços, acentos e hífens
             const nameRegex = /^[a-zA-ZÀ-ÿ\s\-']+$/;
             return nameRegex.test(name);
@@ -170,7 +479,7 @@
         // Função para sanitizar input
         function sanitizeInput(input) {
             if (!input) return '';
-            
+
             return input
                 .trim()
                 .replace(/[<>'"&]/g, '') // Remove caracteres perigosos
@@ -182,18 +491,18 @@
             attempts: {},
             maxAttempts: 5,
             windowMs: 15 * 60 * 1000, // 15 minutos
-            
+
             isBlocked(key) {
                 const now = Date.now();
                 const attempts = this.attempts[key] || [];
-                
+
                 // Limpar tentativas antigas
                 const recentAttempts = attempts.filter(time => now - time < this.windowMs);
                 this.attempts[key] = recentAttempts;
-                
+
                 return recentAttempts.length >= this.maxAttempts;
             },
-            
+
             recordAttempt(key) {
                 if (!this.attempts[key]) {
                     this.attempts[key] = [];
@@ -205,53 +514,53 @@
         // Implementação do cadastro
         async function handleRegister(e) {
             e.preventDefault();
-            
+
             const name = sanitizeInput(document.getElementById('registerName').value);
             const email = sanitizeInput(document.getElementById('registerEmail').value);
             const password = document.getElementById('registerPassword').value;
-            
+
             // Verificar rate limiting
             if (rateLimiter.isBlocked('register')) {
                 showError('Muitas tentativas de cadastro. Tente novamente em 15 minutos.');
                 return;
             }
-            
+
             // Validações client-side
             if (!name || !email || !password) {
                 showError('Todos os campos são obrigatórios');
                 return;
             }
-            
+
             if (!isValidName(name)) {
                 showError('Nome deve ter entre 2 e 100 caracteres e conter apenas letras');
                 return;
             }
-            
+
             if (!isValidEmail(email)) {
                 showError('Por favor, insira um email válido');
                 return;
             }
-            
+
             if (!isValidPassword(password)) {
                 showError('A senha deve ter pelo menos 6 caracteres, incluindo letras e números');
                 return;
             }
-            
+
             // Mostrar loading
             const submitButton = e.target.querySelector('button[type="submit"]');
             const originalText = submitButton.textContent;
             setButtonLoading(submitButton, true, originalText);
-            
+
             try {
                 // Cadastrar usuário no Supabase Auth
                 const { data: authData, error: authError } = await supabase.auth.signUp({
                     email: email,
                     password: password,
                 });
-                
+
                 if (authError) {
                     rateLimiter.recordAttempt('register');
-                    
+
                     // Tratar diferentes tipos de erro
                     if (authError.message.includes('already registered')) {
                         showError('Este email já está cadastrado. Tente fazer login.');
@@ -264,7 +573,7 @@
                     }
                     return;
                 }
-                
+
                 if (authData.user) {
                     // Inserir dados adicionais na tabela users usando função
                     const { data: profileData, error: profileError } = await supabase
@@ -273,20 +582,20 @@
                             user_email: email,
                             user_name: name
                         });
-                    
+
                     if (profileError) {
                         console.error('Erro ao criar perfil:', profileError);
                         showError('Usuário criado, mas houve erro ao salvar o perfil. Tente fazer login.');
                     } else {
                         showSuccess('Cadastro realizado com sucesso! Redirecionando...');
-                        
+
                         // Redirecionar após 2 segundos
                         setTimeout(() => {
                             window.location.href = 'index.html';
                         }, 2000);
                     }
                 }
-                
+
             } catch (error) {
                 console.error('Erro no cadastro:', error);
                 showError('Erro interno. Tente novamente.');
@@ -299,42 +608,42 @@
         // Implementação do login
         async function handleLogin(e) {
             e.preventDefault();
-            
+
             const email = sanitizeInput(document.getElementById('loginEmail').value);
             const password = document.getElementById('loginPassword').value;
-            
+
             // Verificar rate limiting
             if (rateLimiter.isBlocked('login')) {
                 showError('Muitas tentativas de login. Tente novamente em 15 minutos.');
                 return;
             }
-            
+
             // Validações client-side
             if (!email || !password) {
                 showError('Email e senha são obrigatórios');
                 return;
             }
-            
+
             if (!isValidEmail(email)) {
                 showError('Por favor, insira um email válido');
                 return;
             }
-            
+
             // Mostrar loading
             const submitButton = e.target.querySelector('button[type="submit"]');
             const originalText = submitButton.textContent;
             setButtonLoading(submitButton, true, originalText);
-            
+
             try {
                 // Fazer login no Supabase Auth
                 const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
-                
+
                 if (authError) {
                     rateLimiter.recordAttempt('login');
-                    
+
                     // Tratar diferentes tipos de erro
                     if (authError.message.includes('Invalid login credentials')) {
                         showError('Email ou senha incorretos');
@@ -347,16 +656,16 @@
                     }
                     return;
                 }
-                
+
                 if (authData.user && authData.session) {
                     showSuccess('Login realizado com sucesso! Redirecionando...');
-                    
+
                     // Redirecionar após 1 segundo
                     setTimeout(() => {
                         window.location.href = 'index.html';
                     }, 1000);
                 }
-                
+
             } catch (error) {
                 console.error('Erro no login:', error);
                 showError('Erro interno. Tente novamente.');
@@ -369,7 +678,7 @@
         // Verificar se usuário já está logado ao carregar a página
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            
+
             if (session) {
                 // Usuário já está logado, redirecionar para index.html
                 window.location.href = 'index.html';
@@ -388,14 +697,14 @@
         // Função para verificar força da senha
         function getPasswordStrength(password) {
             let strength = 0;
-            
+
             if (password.length >= 6) strength++;
             if (password.length >= 8) strength++;
             if (/[a-z]/.test(password)) strength++;
             if (/[A-Z]/.test(password)) strength++;
             if (/\d/.test(password)) strength++;
             if (/[^a-zA-Z\d]/.test(password)) strength++;
-            
+
             if (strength <= 2) return 'weak';
             if (strength <= 4) return 'medium';
             return 'strong';
@@ -404,10 +713,10 @@
         registerPasswordInput.addEventListener('input', (e) => {
             const password = e.target.value;
             const strength = getPasswordStrength(password);
-            
+
             // Atualizar barra visual
             passwordStrengthBar.className = `password-strength-bar strength-${strength}`;
-            
+
             // Atualizar dica
             if (password.length === 0) {
                 passwordHint.textContent = 'Mínimo 6 caracteres com letras e números';
@@ -448,4 +757,5 @@
         });
     </script>
 </body>
+
 </html>
