@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Cadastro - TeleMed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen py-8">
+    <div class="max-w-2xl mx-auto px-4">
+        <h1 class="text-3xl font-bold text-center mb-8">Teste de Cadastro</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Testar Cadastro Manual</h2>
+            <form id="testForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nome</label>
+                    <input type="text" id="testName" value="João Teste" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="testEmail" value="" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <button type="button" id="generateEmail" class="mt-1 text-sm bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">
+                        Gerar Email Único
+                    </button>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input type="password" id="testPassword" value="teste123" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                    Testar Cadastro
+                </button>
+            </form>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Resultado do Teste</h2>
+            <div id="testResult" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script>
+        function addResult(message, type = 'info') {
+            const resultDiv = document.getElementById('testResult');
+            const div = document.createElement('div');
+            const colors = {
+                success: 'bg-green-100 text-green-800 border-green-200',
+                error: 'bg-red-100 text-red-800 border-red-200',
+                info: 'bg-blue-100 text-blue-800 border-blue-200'
+            };
+            
+            div.className = `p-3 rounded border ${colors[type]}`;
+            div.innerHTML = `
+                <div class="flex items-center">
+                    <span class="mr-2">${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            resultDiv.appendChild(div);
+        }
+
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('testName').value;
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            document.getElementById('testResult').innerHTML = '';
+            addResult('Iniciando teste de cadastro...', 'info');
+            
+            try {
+                // Passo 1: Cadastrar no Supabase Auth
+                addResult('Passo 1: Cadastrando usuário no Supabase Auth...', 'info');
+                
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                });
+                
+                if (authError) {
+                    addResult(`Erro no Auth: ${authError.message}`, 'error');
+                    addResult(`Código do erro: ${authError.status || 'N/A'}`, 'error');
+                    addResult(`Detalhes completos: ${JSON.stringify(authError)}`, 'error');
+                    
+                    // Verificar tipos específicos de erro
+                    if (authError.message.includes('User already registered')) {
+                        addResult('💡 Solução: Use um email diferente ou faça login', 'info');
+                    } else if (authError.message.includes('Invalid email')) {
+                        addResult('💡 Solução: Verifique o formato do email', 'info');
+                    } else if (authError.message.includes('Password')) {
+                        addResult('💡 Solução: Senha deve ter pelo menos 6 caracteres', 'info');
+                    } else if (authError.message.includes('signup')) {
+                        addResult('💡 Possível causa: Cadastro pode estar desabilitado no Supabase', 'info');
+                    }
+                    
+                    return;
+                }
+                
+                addResult(`Auth bem-sucedido! User ID: ${authData.user.id}`, 'success');
+                
+                // Passo 2: Inserir na tabela users
+                addResult('Passo 2: Inserindo dados na tabela users...', 'info');
+                
+                const { data: profileData, error: profileError } = await supabase
+                    .from('users')
+                    .insert([
+                        {
+                            auth_user_id: authData.user.id,
+                            email: email,
+                            name: name
+                        }
+                    ])
+                    .select();
+                
+                if (profileError) {
+                    addResult(`Erro no perfil: ${profileError.message}`, 'error');
+                    addResult(`Código do erro: ${profileError.code}`, 'error');
+                    addResult(`Detalhes: ${JSON.stringify(profileError)}`, 'error');
+                } else {
+                    addResult('Perfil criado com sucesso!', 'success');
+                    addResult(`Dados inseridos: ${JSON.stringify(profileData)}`, 'success');
+                }
+                
+                // Passo 3: Verificar se foi inserido
+                addResult('Passo 3: Verificando inserção...', 'info');
+                
+                const { data: checkData, error: checkError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('auth_user_id', authData.user.id);
+                
+                if (checkError) {
+                    addResult(`Erro na verificação: ${checkError.message}`, 'error');
+                } else {
+                    addResult(`Dados encontrados: ${JSON.stringify(checkData)}`, 'success');
+                }
+                
+            } catch (error) {
+                addResult(`Erro geral: ${error.message}`, 'error');
+                console.error('Erro completo:', error);
+            }
+        });
+        
+        // Função para gerar email único e válido
+        function generateUniqueEmail() {
+            const names = ['joao', 'maria', 'pedro', 'ana', 'carlos', 'lucia', 'marcos', 'julia'];
+            const domains = ['teste.com', 'example.com', 'demo.com'];
+            const randomName = names[Math.floor(Math.random() * names.length)];
+            const randomDomain = domains[Math.floor(Math.random() * domains.length)];
+            const randomNum = Math.floor(Math.random() * 999) + 1;
+            
+            return `${randomName}${randomNum}@${randomDomain}`;
+        }
+
+        // Event listener para gerar email
+        document.getElementById('generateEmail').addEventListener('click', () => {
+            const emailInput = document.getElementById('testEmail');
+            emailInput.value = generateUniqueEmail();
+            addResult(`Email único gerado: ${emailInput.value}`, 'info');
+        });
+
+        // Função para verificar rate limiting
+        async function checkRateLimit() {
+            try {
+                // Tentar uma operação simples para verificar se há rate limiting
+                const { data: { session } } = await supabase.auth.getSession();
+                return false; // Sem rate limiting
+            } catch (error) {
+                if (error.message.includes('429') || error.message.includes('Too Many Requests')) {
+                    return true; // Rate limiting ativo
+                }
+                return false;
+            }
+        }
+
+        // Testar conexão inicial
+        document.addEventListener('DOMContentLoaded', async () => {
+            addResult('Testando conexão inicial...', 'info');
+            
+            // Gerar email único automaticamente
+            document.getElementById('testEmail').value = generateUniqueEmail();
+            addResult('Email único gerado automaticamente', 'info');
+            
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                addResult(`Sessão atual: ${session ? 'Logado como ' + session.user.email : 'Não logado'}`, 'info');
+                
+                // Testar acesso à tabela
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    addResult(`Erro ao acessar tabela: ${error.message}`, 'error');
+                } else {
+                    addResult('Conexão com tabela users OK', 'success');
+                }
+                
+                // Verificar rate limiting
+                const isRateLimited = await checkRateLimit();
+                if (isRateLimited) {
+                    addResult('⚠️ Rate limiting detectado. Aguarde alguns minutos antes de testar cadastro.', 'error');
+                } else {
+                    addResult('✅ Sem rate limiting detectado. Pronto para testar cadastro.', 'success');
+                }
+                
+            } catch (error) {
+                addResult(`Erro na inicialização: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

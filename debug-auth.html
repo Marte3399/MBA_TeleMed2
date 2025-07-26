@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Autenticação - TeleMed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4">
+        <h1 class="text-3xl font-bold text-center mb-8">🔍 Debug Autenticação</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Diagnóstico do Sistema -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">🔧 Diagnóstico do Sistema</h2>
+                <div id="systemDiag" class="space-y-2"></div>
+                <button id="runDiagnostic" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                    Executar Diagnóstico
+                </button>
+            </div>
+            
+            <!-- Teste de Cadastro e Login -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">🧪 Teste Detalhado</h2>
+                
+                <!-- Cadastro -->
+                <div class="mb-4">
+                    <h3 class="font-medium mb-2">Cadastro</h3>
+                    <form id="debugForm" class="space-y-3">
+                        <input type="email" id="debugEmail" placeholder="Email para teste" class="w-full px-3 py-2 border rounded">
+                        <button type="button" id="generateNewEmail" class="w-full bg-gray-500 hover:bg-gray-600 text-white py-1 px-2 rounded text-sm">
+                            🔄 Gerar Novo Email
+                        </button>
+                        <input type="password" id="debugPassword" placeholder="Senha (min 6 chars)" class="w-full px-3 py-2 border rounded">
+                        <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                            Testar Cadastro
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Login -->
+                <div class="border-t pt-4">
+                    <h3 class="font-medium mb-2">Login</h3>
+                    <form id="loginForm" class="space-y-3">
+                        <input type="email" id="loginEmail" placeholder="Email para login" class="w-full px-3 py-2 border rounded">
+                        <input type="password" id="loginPassword" placeholder="Senha" class="w-full px-3 py-2 border rounded">
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                            Testar Login
+                        </button>
+                        <button type="button" id="useLastUser" class="w-full bg-gray-400 hover:bg-gray-500 text-white py-1 px-2 rounded text-sm">
+                            Usar Último Usuário Cadastrado
+                        </button>
+                    </form>
+                </div>
+                
+                <div id="debugResult" class="mt-4 space-y-2"></div>
+            </div>
+        </div>
+        
+        <!-- Console de Debug -->
+        <div class="bg-gray-900 rounded-lg shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4 text-white">💻 Console de Debug</h2>
+            <div id="debugConsole" class="bg-black rounded p-4 h-64 overflow-y-auto font-mono text-sm text-green-400"></div>
+            <button id="clearConsole" class="mt-2 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                Limpar Console
+            </button>
+        </div>
+        
+        <!-- Informações do Projeto -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">📋 Informações do Projeto</h2>
+            <div id="projectInfo" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script>
+        function log(message, type = 'info') {
+            const console = document.getElementById('debugConsole');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: 'text-green-400',
+                error: 'text-red-400',
+                warning: 'text-yellow-400',
+                success: 'text-blue-400'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = colors[type] || 'text-green-400';
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            console.appendChild(logEntry);
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        function addDiag(title, status, details, type = 'info') {
+            const container = document.getElementById('systemDiag');
+            const div = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-green-50 border-green-200 text-green-800',
+                error: 'bg-red-50 border-red-200 text-red-800',
+                warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                info: 'bg-blue-50 border-blue-200 text-blue-800'
+            };
+            
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+            
+            div.className = `p-3 rounded border ${colors[type]}`;
+            div.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="font-medium">${icons[type]} ${title}</span>
+                    <span class="text-xs">${status}</span>
+                </div>
+                <div class="text-sm mt-1">${details}</div>
+            `;
+            container.appendChild(div);
+        }
+        
+        function addResult(message, type = 'info') {
+            const container = document.getElementById('debugResult');
+            const div = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-green-100 text-green-800 border-green-200',
+                error: 'bg-red-100 text-red-800 border-red-200',
+                info: 'bg-blue-100 text-blue-800 border-blue-200'
+            };
+            
+            div.className = `p-2 rounded border text-sm ${colors[type]}`;
+            div.innerHTML = `${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'} ${message}`;
+            container.appendChild(div);
+        }
+        
+        function addProjectInfo(key, value) {
+            const container = document.getElementById('projectInfo');
+            const div = document.createElement('div');
+            div.className = 'bg-gray-50 p-3 rounded';
+            div.innerHTML = `
+                <div class="text-sm font-medium text-gray-600">${key}</div>
+                <div class="text-sm text-gray-900 font-mono">${value}</div>
+            `;
+            container.appendChild(div);
+        }
+        
+        async function runDiagnostic() {
+            document.getElementById('systemDiag').innerHTML = '';
+            log('Iniciando diagnóstico completo...', 'info');
+            
+            try {
+                // 1. Verificar cliente Supabase
+                if (supabase) {
+                    addDiag('Cliente Supabase', 'OK', 'Cliente inicializado corretamente', 'success');
+                    log('Cliente Supabase: OK', 'success');
+                } else {
+                    addDiag('Cliente Supabase', 'ERRO', 'Cliente não inicializado', 'error');
+                    log('Cliente Supabase: ERRO - não inicializado', 'error');
+                    return;
+                }
+                
+                // 2. Verificar URL e chave
+                const url = supabase.supabaseUrl;
+                const key = supabase.supabaseKey;
+                
+                addDiag('Configuração', 'OK', `URL: ${url}`, 'success');
+                log(`URL do projeto: ${url}`, 'info');
+                
+                // 3. Testar conexão básica
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    addDiag('Conexão Auth', 'OK', session ? `Logado: ${session.user.email}` : 'Não logado', 'success');
+                    log('Conexão com Auth: OK', 'success');
+                } catch (e) {
+                    addDiag('Conexão Auth', 'ERRO', e.message, 'error');
+                    log(`Erro na conexão Auth: ${e.message}`, 'error');
+                }
+                
+                // 4. Testar acesso ao banco
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('count', { count: 'exact', head: true });
+                    
+                    if (error) {
+                        addDiag('Banco de Dados', 'ERRO', error.message, 'error');
+                        log(`Erro no banco: ${error.message}`, 'error');
+                    } else {
+                        addDiag('Banco de Dados', 'OK', 'Tabela users acessível', 'success');
+                        log('Banco de dados: OK', 'success');
+                    }
+                } catch (e) {
+                    addDiag('Banco de Dados', 'ERRO', e.message, 'error');
+                    log(`Erro no banco: ${e.message}`, 'error');
+                }
+                
+                // 5. Verificar usuários existentes
+                try {
+                    const { data: users, error } = await supabase
+                        .from('users')
+                        .select('email, created_at')
+                        .limit(5);
+                    
+                    if (error) {
+                        addDiag('Usuários', 'AVISO', 'Não foi possível listar usuários', 'warning');
+                    } else {
+                        addDiag('Usuários', 'OK', `${users.length} usuários encontrados`, 'success');
+                        log(`Usuários no sistema: ${users.length}`, 'info');
+                    }
+                } catch (e) {
+                    addDiag('Usuários', 'ERRO', e.message, 'error');
+                }
+                
+                // 6. Testar configurações de auth (simulado)
+                addDiag('Configurações Auth', 'VERIFICAR', 'Verifique no dashboard do Supabase se signup está habilitado', 'warning');
+                log('Lembre-se de verificar as configurações de Auth no dashboard', 'warning');
+                
+            } catch (error) {
+                addDiag('Sistema', 'ERRO', error.message, 'error');
+                log(`Erro geral: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSignup() {
+            const email = document.getElementById('debugEmail').value;
+            const password = document.getElementById('debugPassword').value;
+            
+            if (!email || !password) {
+                addResult('Preencha email e senha', 'error');
+                return;
+            }
+            
+            document.getElementById('debugResult').innerHTML = '';
+            log(`Testando cadastro para: ${email}`, 'info');
+            
+            try {
+                // Fazer requisição detalhada
+                addResult('Enviando requisição para Supabase...', 'info');
+                
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                });
+                
+                if (error) {
+                    addResult(`Erro: ${error.message}`, 'error');
+                    addResult(`Status: ${error.status || 'N/A'}`, 'error');
+                    
+                    log(`Erro no signup: ${error.message}`, 'error');
+                    log(`Status HTTP: ${error.status}`, 'error');
+                    log(`Detalhes: ${JSON.stringify(error)}`, 'error');
+                    
+                    // Análise específica do erro
+                    if (error.status === 400) {
+                        addResult('Erro 400: Requisição inválida', 'error');
+                        
+                        if (error.message.includes('User already registered')) {
+                            addResult('Causa: Email já cadastrado', 'warning');
+                        } else if (error.message.includes('Invalid email')) {
+                            addResult('Causa: Email inválido', 'warning');
+                        } else if (error.message.includes('Password')) {
+                            addResult('Causa: Problema com a senha', 'warning');
+                        } else if (error.message.includes('Signup is disabled')) {
+                            addResult('Causa: Cadastro desabilitado no Supabase', 'error');
+                        } else {
+                            addResult('Causa: Desconhecida - verifique configurações do Supabase', 'warning');
+                        }
+                    }
+                    
+                } else {
+                    addResult('Cadastro bem-sucedido!', 'success');
+                    addResult(`User ID: ${data.user?.id}`, 'success');
+                    addResult(`Email confirmado: ${data.user?.email_confirmed_at ? 'Sim' : 'Não'}`, 'info');
+                    
+                    log(`Cadastro OK para: ${email}`, 'success');
+                    log(`User ID: ${data.user?.id}`, 'success');
+                    
+                    // Salvar último usuário para facilitar teste de login
+                    lastUser = {
+                        email: email,
+                        password: password,
+                        userId: data.user.id
+                    };
+                    
+                    // Testar inserção na tabela users usando função
+                    addResult('Testando inserção na tabela users...', 'info');
+                    
+                    try {
+                        const { data: profileData, error: profileError } = await supabase
+                            .rpc('create_user_profile', {
+                                user_id: data.user.id,
+                                user_email: email,
+                                user_name: 'Usuário Teste'
+                            });
+                        
+                        if (profileError) {
+                            addResult(`Erro no perfil: ${profileError.message}`, 'error');
+                            log(`Erro no perfil: ${profileError.message}`, 'error');
+                        } else {
+                            addResult('Perfil criado com sucesso!', 'success');
+                            addResult(`Dados: ${JSON.stringify(profileData)}`, 'success');
+                            log('Perfil criado com sucesso!', 'success');
+                        }
+                    } catch (profileErr) {
+                        addResult(`Erro na inserção: ${profileErr.message}`, 'error');
+                        log(`Erro na inserção: ${profileErr.message}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                addResult(`Erro de rede: ${error.message}`, 'error');
+                log(`Erro de rede: ${error.message}`, 'error');
+            }
+        }
+        
+        // Variável para armazenar último usuário cadastrado
+        let lastUser = null;
+        
+        // Função para testar login
+        async function testLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                addResult('Preencha email e senha para login', 'error');
+                return;
+            }
+            
+            log(`Testando login para: ${email}`, 'info');
+            addResult('Tentando fazer login...', 'info');
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+                
+                if (error) {
+                    addResult(`Erro no login: ${error.message}`, 'error');
+                    addResult(`Status: ${error.status || 'N/A'}`, 'error');
+                    
+                    log(`Erro no login: ${error.message}`, 'error');
+                    log(`Status HTTP: ${error.status}`, 'error');
+                    
+                    // Análise específica do erro
+                    if (error.status === 400) {
+                        if (error.message.includes('Invalid login credentials')) {
+                            addResult('Causa: Email ou senha incorretos', 'warning');
+                        } else if (error.message.includes('Email not confirmed')) {
+                            addResult('Causa: Email não confirmado', 'warning');
+                        } else {
+                            addResult('Causa: Requisição inválida', 'warning');
+                        }
+                    }
+                    
+                } else {
+                    addResult('Login bem-sucedido!', 'success');
+                    addResult(`User ID: ${data.user?.id}`, 'success');
+                    addResult(`Email: ${data.user?.email}`, 'success');
+                    addResult(`Sessão ativa: ${data.session ? 'Sim' : 'Não'}`, 'success');
+                    
+                    log(`Login OK para: ${email}`, 'success');
+                    log(`User ID: ${data.user?.id}`, 'success');
+                    
+                    // Testar busca do perfil
+                    addResult('Buscando dados do perfil...', 'info');
+                    
+                    try {
+                        const { data: profileData, error: profileError } = await supabase
+                            .from('users')
+                            .select('*')
+                            .eq('auth_user_id', data.user.id)
+                            .single();
+                        
+                        if (profileError) {
+                            addResult(`Erro ao buscar perfil: ${profileError.message}`, 'error');
+                            log(`Erro no perfil: ${profileError.message}`, 'error');
+                        } else {
+                            addResult('Perfil encontrado!', 'success');
+                            addResult(`Nome: ${profileData.name}`, 'success');
+                            log('Perfil encontrado com sucesso!', 'success');
+                        }
+                    } catch (profileErr) {
+                        addResult(`Erro na busca do perfil: ${profileErr.message}`, 'error');
+                        log(`Erro na busca do perfil: ${profileErr.message}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                addResult(`Erro de rede no login: ${error.message}`, 'error');
+                log(`Erro de rede no login: ${error.message}`, 'error');
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('runDiagnostic').addEventListener('click', runDiagnostic);
+        document.getElementById('debugForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            testSignup();
+        });
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            testLogin();
+        });
+        document.getElementById('generateNewEmail').addEventListener('click', () => {
+            const newEmail = generateValidEmail();
+            document.getElementById('debugEmail').value = newEmail;
+            log(`Novo email gerado: ${newEmail}`, 'info');
+        });
+        document.getElementById('useLastUser').addEventListener('click', () => {
+            if (lastUser) {
+                document.getElementById('loginEmail').value = lastUser.email;
+                document.getElementById('loginPassword').value = lastUser.password;
+                addResult(`Usando último usuário: ${lastUser.email}`, 'info');
+                log(`Preenchido com último usuário: ${lastUser.email}`, 'info');
+            } else {
+                addResult('Nenhum usuário cadastrado ainda', 'warning');
+            }
+        });
+        document.getElementById('clearConsole').addEventListener('click', () => {
+            document.getElementById('debugConsole').innerHTML = '';
+        });
+        
+        // Função para gerar email válido
+        function generateValidEmail() {
+            const names = ['joao', 'maria', 'pedro', 'ana', 'carlos', 'lucia', 'marcos', 'julia'];
+            const domains = ['teste.com', 'example.com', 'demo.com'];
+            const randomName = names[Math.floor(Math.random() * names.length)];
+            const randomDomain = domains[Math.floor(Math.random() * domains.length)];
+            const randomNum = Math.floor(Math.random() * 999) + 1;
+            
+            return `${randomName}${randomNum}@${randomDomain}`;
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            // Gerar email válido
+            document.getElementById('debugEmail').value = generateValidEmail();
+            document.getElementById('debugPassword').value = 'teste123';
+            
+            // Adicionar informações do projeto
+            addProjectInfo('URL do Projeto', 'https://xfgpoixiqppajhgkcwse.supabase.co');
+            addProjectInfo('Project Ref', 'xfgpoixiqppajhgkcwse');
+            addProjectInfo('Versão Supabase JS', '2.x');
+            addProjectInfo('Ambiente', 'Desenvolvimento');
+            
+            log('Sistema de debug inicializado', 'success');
+            
+            // Executar diagnóstico automaticamente
+            setTimeout(runDiagnostic, 1000);
+        });
+    </script>
+</body>
+</html>

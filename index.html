@@ -1,14 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vercel Demo</title>
+    <title>TeleMed - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 m-4">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Testar2</h1>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header com informações do usuário e logout -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">TeleMed</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userWelcome" class="text-gray-700">Carregando...</span>
+                    <button id="logoutButton" 
+                            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 mx-auto">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Dashboard</h2>
         
         <div class="space-y-4">
             <button id="colorButton" 
@@ -23,11 +44,48 @@
                     Increment
                 </button>
             </div>
+            </div>
         </div>
-    </div>
+        </div>
+    </main>
 
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/session.js"></script>
     <script>
-        // Counter functionality
+        // Verificar autenticação ao carregar a página
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Proteger a página - redirecionar se não autenticado
+            const authenticated = await requireAuth();
+            
+            if (authenticated) {
+                // Carregar dados do usuário
+                const user = await getCurrentUser();
+                if (user) {
+                    document.getElementById('userWelcome').textContent = `Olá, ${user.name}!`;
+                }
+            }
+        });
+
+        // Funcionalidade de logout
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            const button = document.getElementById('logoutButton');
+            const originalText = button.textContent;
+            
+            button.textContent = 'Saindo...';
+            button.disabled = true;
+            
+            const success = await logout();
+            
+            if (!success) {
+                button.textContent = originalText;
+                button.disabled = false;
+                alert('Erro ao fazer logout. Tente novamente.');
+            }
+        });
+
+        // Counter functionality (funcionalidade original mantida)
         let count = 0;
         const countElement = document.getElementById('count');
         const incrementButton = document.getElementById('incrementButton');
@@ -37,7 +95,7 @@
             countElement.textContent = count;
         });
 
-        // Background color change functionality
+        // Background color change functionality (funcionalidade original mantida)
         const colorButton = document.getElementById('colorButton');
         const colors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-pink-100', 'bg-yellow-100'];
         let currentColorIndex = 0;

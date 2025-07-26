@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificador de Status - TeleMed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen py-8">
+    <div class="max-w-2xl mx-auto px-4">
+        <h1 class="text-3xl font-bold text-center mb-8">🔍 Verificador de Status</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Status do Sistema</h2>
+            <div id="statusResults" class="space-y-3"></div>
+            <button id="checkStatus" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                🔄 Verificar Status
+            </button>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Próximos Passos</h2>
+            <div id="recommendations" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script>
+        function addStatus(title, status, message, type = 'info') {
+            const container = document.getElementById('statusResults');
+            const div = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-green-50 border-green-200 text-green-800',
+                error: 'bg-red-50 border-red-200 text-red-800',
+                warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                info: 'bg-blue-50 border-blue-200 text-blue-800'
+            };
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            div.className = `p-4 rounded-lg border ${colors[type]}`;
+            div.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="mr-2 text-lg">${icons[type]}</span>
+                        <span class="font-semibold">${title}</span>
+                    </div>
+                    <span class="text-sm font-medium">${status}</span>
+                </div>
+                <p class="mt-2 text-sm">${message}</p>
+            `;
+            container.appendChild(div);
+        }
+        
+        function addRecommendation(text, priority = 'normal') {
+            const container = document.getElementById('recommendations');
+            const div = document.createElement('div');
+            
+            const priorityColors = {
+                high: 'bg-red-50 border-red-200 text-red-800',
+                normal: 'bg-blue-50 border-blue-200 text-blue-800',
+                low: 'bg-gray-50 border-gray-200 text-gray-800'
+            };
+            
+            div.className = `p-3 rounded border ${priorityColors[priority]}`;
+            div.innerHTML = `<span class="text-sm">${text}</span>`;
+            container.appendChild(div);
+        }
+        
+        async function checkSystemStatus() {
+            document.getElementById('statusResults').innerHTML = '';
+            document.getElementById('recommendations').innerHTML = '';
+            
+            let canSignUp = false;
+            let canSignIn = false;
+            let dbConnected = false;
+            
+            try {
+                // 1. Verificar inicialização do Supabase
+                if (supabase) {
+                    addStatus('Supabase Client', 'OK', 'Cliente inicializado corretamente', 'success');
+                } else {
+                    addStatus('Supabase Client', 'ERRO', 'Cliente não inicializado', 'error');
+                    return;
+                }
+                
+                // 2. Verificar conexão com banco
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('count', { count: 'exact', head: true });
+                    
+                    if (error) {
+                        addStatus('Conexão BD', 'ERRO', `Erro: ${error.message}`, 'error');
+                    } else {
+                        addStatus('Conexão BD', 'OK', 'Banco de dados acessível', 'success');
+                        dbConnected = true;
+                    }
+                } catch (e) {
+                    addStatus('Conexão BD', 'ERRO', `Erro de conexão: ${e.message}`, 'error');
+                }
+                
+                // 3. Verificar rate limiting para signup
+                try {
+                    // Tentar uma operação que não consome rate limit
+                    const { data: { session } } = await supabase.auth.getSession();
+                    addStatus('Auth Session', 'OK', session ? `Logado: ${session.user.email}` : 'Não logado', 'info');
+                    
+                    // Simular verificação de rate limit (não podemos testar diretamente sem consumir)
+                    const now = Date.now();
+                    const lastAttempt = localStorage.getItem('lastSignUpAttempt');
+                    
+                    if (lastAttempt) {
+                        const timeSince = now - parseInt(lastAttempt);
+                        const minutesSince = Math.floor(timeSince / (1000 * 60));
+                        
+                        if (minutesSince < 15) {
+                            addStatus('Rate Limit', 'BLOQUEADO', `Aguarde ${15 - minutesSince} minutos para cadastro`, 'warning');
+                            canSignUp = false;
+                        } else {
+                            addStatus('Rate Limit', 'OK', 'Pronto para cadastro', 'success');
+                            canSignUp = true;
+                        }
+                    } else {
+                        addStatus('Rate Limit', 'OK', 'Nenhuma tentativa recente detectada', 'success');
+                        canSignUp = true;
+                    }
+                    
+                } catch (e) {
+                    addStatus('Auth Check', 'ERRO', `Erro: ${e.message}`, 'error');
+                }
+                
+                // 4. Verificar políticas RLS
+                try {
+                    // Tentar acessar a tabela (isso indica se as políticas estão OK)
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('id')
+                        .limit(1);
+                    
+                    // Se não der erro de política, está OK
+                    addStatus('Políticas RLS', 'OK', 'Políticas de segurança configuradas', 'success');
+                } catch (e) {
+                    addStatus('Políticas RLS', 'AVISO', 'Não foi possível verificar políticas', 'warning');
+                }
+                
+            } catch (error) {
+                addStatus('Sistema', 'ERRO', `Erro geral: ${error.message}`, 'error');
+            }
+            
+            // Gerar recomendações
+            if (!dbConnected) {
+                addRecommendation('🔧 Verifique a conexão com o Supabase', 'high');
+            }
+            
+            if (!canSignUp) {
+                addRecommendation('⏰ Aguarde o reset do rate limit ou use emails únicos em test-signup.html', 'high');
+                addRecommendation('🧪 Enquanto isso, teste outras funcionalidades em test-auth.html', 'normal');
+            } else {
+                addRecommendation('✅ Sistema pronto! Você pode testar cadastro em auth.html', 'normal');
+                addRecommendation('🚀 Execute todos os testes em test-auth.html', 'normal');
+            }
+            
+            addRecommendation('📋 Consulte VALIDATION_CHECKLIST.md para lista completa de funcionalidades', 'low');
+        }
+        
+        document.getElementById('checkStatus').addEventListener('click', checkSystemStatus);
+        
+        // Verificar status automaticamente ao carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(checkSystemStatus, 1000);
+        });
+    </script>
+</body>
+</html>

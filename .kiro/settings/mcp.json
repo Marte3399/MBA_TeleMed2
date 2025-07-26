@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "@supabase/mcp-server-supabase",
+        "--project-ref=xfgpoixiqppajhgkcwse"
+      ],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
+        "SUPABASE_ACCESS_TOKEN": "sbp_9fedecc3b291131dcfb53641d9b346f23be80bf2"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "mcp_supabase_apply_migration",
+        "mcp_supabase_execute_sql",
+        "mcp_supabase_list_tables",
+        "mcp_supabase_list_migrations",
+        "mcp_supabase_get_project_url",
+        "mcp_supabase_get_anon_key",
+        "mcp_supabase_generate_typescript_types",
+        "mcp_supabase_deploy_edge_function",
+        "mcp_supabase_list_edge_functions"
+      ]
+    }
+  }
+}

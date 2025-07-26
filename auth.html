@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autenticação - TeleMed</title>
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>TeleMed</h1>
+                <div class="auth-tabs">
+                    <button id="loginTab" class="tab-button active">Login</button>
+                    <button id="registerTab" class="tab-button">Cadastro</button>
+                </div>
+            </div>
+
+            <!-- Formulário de Login -->
+            <form id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required autocomplete="email" aria-describedby="loginEmailError">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Senha</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password" aria-describedby="loginPasswordError">
+                </div>
+                <button type="submit" class="auth-button">Entrar</button>
+            </form>
+
+            <!-- Formulário de Cadastro -->
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="registerName">Nome</label>
+                    <input type="text" id="registerName" required autocomplete="name" aria-describedby="registerNameError">
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" required autocomplete="email" aria-describedby="registerEmailError">
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Senha</label>
+                    <input type="password" id="registerPassword" required minlength="6" autocomplete="new-password" aria-describedby="passwordHint">
+                    <div class="password-strength">
+                        <div id="passwordStrengthBar" class="password-strength-bar"></div>
+                    </div>
+                    <small id="passwordHint" class="text-gray-500 text-sm mt-1">Mínimo 6 caracteres com letras e números</small>
+                </div>
+                <button type="submit" class="auth-button">Cadastrar</button>
+            </form>
+
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
