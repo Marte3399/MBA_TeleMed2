@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleMed - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        success: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                        },
+                        warning: {
+                            50: '#fefce8',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                        },
+                        danger: {
+                            50: '#fef2f2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                        },
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'bounce-in': 'bounceIn 0.6s ease-out',
+                        'pulse-dot': 'pulseDot 2s infinite',
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header com informações do usuário e logout -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">TeleMed</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userWelcome" class="text-gray-700">Carregando...</span>
+                    <button id="logoutButton"
+                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-8">
+                <button onclick="showSection('home')" class="nav-btn py-4 px-2 border-b-2 border-primary-500 text-primary-600 font-medium">
+                    Início
+                </button>
+                <button onclick="showSection('specialties')" class="nav-btn py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium">
+                    Especialidades
+                </button>
+                <button onclick="showSection('appointments')" class="nav-btn py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium">
+                    Minhas Consultas
+                </button>
+                <button onclick="showSection('dashboard')" class="nav-btn py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium">
+                    Dashboard
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo principal -->
+    <main class="min-h-screen">
+        <!-- Home Section -->
+        <section id="homeSection" class="section">
+            <!-- Hero Section -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                <div class="max-w-7xl mx-auto px-4 py-16">
+                    <div class="text-center">
+                        <h2 class="text-5xl font-bold mb-6">Bem-vindo ao TeleMed</h2>
+                        <p class="text-xl mb-8">Sua plataforma de telemedicina está pronta para uso</p>
+                        <div class="flex justify-center space-x-4">
+                            <button onclick="showSection('specialties')" class="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition">
+                                Ver Especialidades
+                            </button>
+                            <button onclick="openVideoCall()" class="bg-red-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-700 transition">
+                                Consulta Agora
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="bg-white py-12">
+                <div class="max-w-6xl mx-auto px-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="text-center p-6 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg">
+                            <div class="text-4xl font-bold" id="doctorsOnline">47</div>
+                            <div class="text-sm opacity-90">Médicos Online</div>
+                        </div>
+                        <div class="text-center p-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg">
+                            <div class="text-4xl font-bold" id="consultationsToday">234</div>
+                            <div class="text-sm opacity-90">Consultas Hoje</div>
+                        </div>
+                        <div class="text-center p-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg">
+                            <div class="text-4xl font-bold" id="patientsServed">12.5k</div>
+                            <div class="text-sm opacity-90">Pacientes Atendidos</div>
+                        </div>
+                        <div class="text-center p-6 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl shadow-lg">
+                            <div class="text-4xl font-bold">4.9★</div>
+                            <div class="text-sm opacity-90">Avaliação Média</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="bg-gray-50 py-16">
+                <div class="max-w-7xl mx-auto px-4">
+                    <h3 class="text-3xl font-bold text-center text-gray-900 mb-12">Suas Funcionalidades</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="text-center p-6 bg-white rounded-xl shadow-lg">
+                            <div class="text-5xl mb-4">🎥</div>
+                            <h4 class="text-xl font-bold text-gray-900 mb-2">Videochamadas HD</h4>
+                            <p class="text-gray-600">Consultas por vídeo com qualidade profissional</p>
+                        </div>
+                        <div class="text-center p-6 bg-white rounded-xl shadow-lg">
+                            <div class="text-5xl mb-4">💊</div>
+                            <h4 class="text-xl font-bold text-gray-900 mb-2">Prescrição Digital</h4>
+                            <p class="text-gray-600">Receitas médicas digitais válidas</p>
+                        </div>
+                        <div class="text-center p-6 bg-white rounded-xl shadow-lg">
+                            <div class="text-5xl mb-4">📱</div>
+                            <h4 class="text-xl font-bold text-gray-900 mb-2">Disponível 24/7</h4>
+                            <p class="text-gray-600">Atendimento médico a qualquer hora</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Outras seções... -->
+        <section id="specialtiesSection" class="section hidden">
+            <div class="py-12">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="text-center mb-12">
+                        <h2 class="text-4xl font-bold text-gray-900 mb-4">Especialidades Médicas</h2>
+                        <p class="text-xl text-gray-600">Escolha a especialidade que você precisa</p>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="max-w-2xl mx-auto mb-12">
+                        <div class="relative">
+                            <input type="text" id="searchInput" placeholder="🔍 Buscar especialidade..."
+                                class="w-full px-6 py-4 text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-lg"
+                                oninput="searchSpecialties(this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Specialties Grid -->
+                    <div id="specialtiesGrid"
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Specialties will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="appointmentsSection" class="section hidden">
+            <div class="py-12">
+                <div class="max-w-7xl mx-auto px-4">
+                    <h2 class="text-4xl font-bold text-center text-gray-900 mb-12">Minhas Consultas</h2>
+
+                    <!-- Appointment Tabs -->
+                    <div class="flex justify-center mb-8">
+                        <div class="bg-gray-100 rounded-full p-1">
+                            <button onclick="showAppointmentTab('upcoming')"
+                                class="appointment-tab-btn px-6 py-2 rounded-full font-medium transition"
+                                id="upcomingTabBtn">
+                                Próximas
+                            </button>
+                            <button onclick="showAppointmentTab('past')"
+                                class="appointment-tab-btn px-6 py-2 rounded-full font-medium transition"
+                                id="pastTabBtn">
+                                Anteriores
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Appointments Content -->
+                    <div id="appointmentsContent">
+                        <!-- Content will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboardSection" class="section hidden">
+            <div class="py-12">
+                <div class="max-w-7xl mx-auto px-4">
+                    <h2 class="text-4xl font-bold text-center text-gray-900 mb-12">Dashboard</h2>
+
+                    <!-- Dashboard Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Consultas Realizadas</h3>
+                                    <p class="text-3xl font-bold text-blue-600">24</p>
+                                </div>
+                                <div class="text-4xl text-blue-600">📅</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Próximas Consultas</h3>
+                                    <p class="text-3xl font-bold text-green-600">3</p>
+                                </div>
+                                <div class="text-4xl text-green-600">⏰</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Prescrições Ativas</h3>
+                                    <p class="text-3xl font-bold text-purple-600">5</p>
+                                </div>
+                                <div class="text-4xl text-purple-600">💊</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Placeholder -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4">Consultas por Mês</h3>
+                            <div class="h-64 bg-gray-100 rounded flex items-center justify-center">
+                                <p class="text-gray-500">Gráfico será implementado</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4">Especialidades Mais Procuradas</h3>
+                            <div class="h-64 bg-gray-100 rounded flex items-center justify-center">
+                                <p class="text-gray-500">Gráfico será implementado</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/session.js"></script>
+    <script>
+        // Verificar autenticação ao carregar a página
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Proteger a página - redirecionar se não autenticado
+                const authenticated = await requireAuth();
+
+                if (authenticated) {
+                    // Carregar dados do usuário
+                    const user = await getCurrentUser();
+                    if (user) {
+                        document.getElementById('userWelcome').textContent = `Olá, ${user.name}!`;
+                    }
+                }
+            } catch (error) {
+                console.error('Erro na inicialização:', error);
+                // Em caso de erro, mostrar interface básica
+                document.getElementById('userWelcome').textContent = 'Usuário';
+            }
+        });
+
+        // Funcionalidade de logout
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            const button = document.getElementById('logoutButton');
+            const originalText = button.textContent;
+
+            button.textContent = 'Saindo...';
+            button.disabled = true;
+
+            try {
+                const success = await logout();
+
+                if (!success) {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    alert('Erro ao fazer logout. Tente novamente.');
+                }
+            } catch (error) {
+                console.error('Erro no logout:', error);
+                button.textContent = originalText;
+                button.disabled = false;
+                alert('Erro ao fazer logout. Tente novamente.');
+            }
+        });
+
+        // Navegação entre seções
+        function showSection(sectionName) {
+            // Esconder todas as seções
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+
+            // Mostrar seção selecionada
+            document.getElementById(sectionName + 'Section').classList.remove('hidden');
+
+            // Atualizar navegação
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('border-primary-500', 'text-primary-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            event.target.classList.remove('border-transparent', 'text-gray-500');
+            event.target.classList.add('border-primary-500', 'text-primary-600');
+        }
+
+        // Placeholder functions
+        function openVideoCall() {
+            alert('Funcionalidade de videochamada será implementada');
+        }
+
+        function searchSpecialties(query) {
+            console.log('Buscando:', query);
+        }
+
+        function showAppointmentTab(tab) {
+            console.log('Mostrando aba:', tab);
+        }
+    </script>
+</body>
+
+</html>

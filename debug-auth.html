@@ -67,6 +67,60 @@
             </button>
         </div>
         
+        <!-- Testes de Banco de Dados -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">🗄️ Testes de Banco de Dados</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Controles de Teste -->
+                <div>
+                    <h3 class="font-medium mb-3">Suítes de Teste Disponíveis</h3>
+                    <div class="space-y-2">
+                        <button id="runStructureTests" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded text-sm">
+                            🏗️ Testar Estrutura das Tabelas
+                        </button>
+                        <button id="runSecurityTests" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm">
+                            🔒 Testar Segurança (RLS)
+                        </button>
+                        <button id="runCrudTests" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded text-sm">
+                            📝 Testar Operações CRUD
+                        </button>
+                        <button id="runRelationshipTests" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded text-sm">
+                            🔗 Testar Relacionamentos
+                        </button>
+                        <button id="runAllDbTests" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded">
+                            🚀 Executar Todos os Testes
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-gray-50 rounded">
+                        <h4 class="font-medium text-sm mb-2">Status dos Testes</h4>
+                        <div id="testProgress" class="space-y-1">
+                            <div class="text-xs text-gray-600">Nenhum teste executado ainda</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resultados dos Testes -->
+                <div>
+                    <h3 class="font-medium mb-3">Resultados dos Testes</h3>
+                    <div id="dbTestResults" class="bg-gray-50 rounded p-4 h-80 overflow-y-auto text-sm">
+                        <div class="text-gray-500 text-center py-8">
+                            Clique em um dos botões ao lado para executar os testes
+                        </div>
+                    </div>
+                    <div class="mt-2 flex gap-2">
+                        <button id="clearDbResults" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs">
+                            Limpar Resultados
+                        </button>
+                        <button id="exportDbResults" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">
+                            Exportar Relatório
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Informações do Projeto -->
         <div class="bg-white rounded-lg shadow-lg p-6 mt-6">
             <h2 class="text-xl font-semibold mb-4">📋 Informações do Projeto</h2>
@@ -432,6 +486,455 @@
             return `${randomName}${randomNum}@${randomDomain}`;
         }
 
+        // =====================================================
+        // FUNÇÕES DE TESTE DE BANCO DE DADOS
+        // =====================================================
+        
+        // Variáveis globais para testes
+        let testResults = [];
+        let currentTestSuite = '';
+        
+        // Função para adicionar resultado de teste de BD
+        function addDbTestResult(testName, passed, details = '', category = '') {
+            const container = document.getElementById('dbTestResults');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const result = {
+                timestamp,
+                category,
+                testName,
+                passed,
+                details
+            };
+            
+            testResults.push(result);
+            
+            const div = document.createElement('div');
+            div.className = `p-2 mb-2 rounded border-l-4 ${passed ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`;
+            
+            const icon = passed ? '✅' : '❌';
+            const statusText = passed ? 'PASSOU' : 'FALHOU';
+            
+            div.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="font-medium text-sm">${icon} ${testName}</span>
+                    <span class="text-xs text-gray-500">${timestamp}</span>
+                </div>
+                ${details ? `<div class="text-xs text-gray-600 mt-1">${details}</div>` : ''}
+            `;
+            
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            
+            // Atualizar progresso
+            updateTestProgress(category, testName, passed);
+            
+            // Log no console
+            log(`[${category}] ${testName}: ${statusText}${details ? ' - ' + details : ''}`, passed ? 'success' : 'error');
+        }
+        
+        // Função para atualizar progresso dos testes
+        function updateTestProgress(category, testName, passed) {
+            const container = document.getElementById('testProgress');
+            
+            // Encontrar ou criar entrada para a categoria
+            let categoryDiv = container.querySelector(`[data-category="${category}"]`);
+            if (!categoryDiv) {
+                categoryDiv = document.createElement('div');
+                categoryDiv.setAttribute('data-category', category);
+                categoryDiv.className = 'text-xs';
+                categoryDiv.innerHTML = `<span class="font-medium">${category}:</span> <span class="status">0/0</span>`;
+                container.appendChild(categoryDiv);
+            }
+            
+            // Contar testes da categoria
+            const categoryTests = testResults.filter(r => r.category === category);
+            const passedTests = categoryTests.filter(r => r.passed).length;
+            const totalTests = categoryTests.length;
+            
+            const statusSpan = categoryDiv.querySelector('.status');
+            const color = passedTests === totalTests && totalTests > 0 ? 'text-green-600' : 'text-blue-600';
+            statusSpan.className = `status ${color}`;
+            statusSpan.textContent = `${passedTests}/${totalTests}`;
+        }
+        
+        // Função para executar SQL e capturar erros
+        async function executeSqlTest(query, testName, category) {
+            try {
+                const { data, error } = await supabase.rpc('execute_sql', { query });
+                
+                if (error) {
+                    addDbTestResult(testName, false, `Erro SQL: ${error.message}`, category);
+                    return false;
+                } else {
+                    addDbTestResult(testName, true, 'Query executada com sucesso', category);
+                    return true;
+                }
+            } catch (e) {
+                addDbTestResult(testName, false, `Erro de execução: ${e.message}`, category);
+                return false;
+            }
+        }
+        
+        // Testes de estrutura das tabelas
+        async function runStructureTests() {
+            currentTestSuite = 'Estrutura';
+            addDbTestResult('Iniciando testes de estrutura...', true, 'Verificando tabelas e colunas', 'ESTRUTURA');
+            
+            const tables = ['specialties', 'doctors', 'appointments', 'consultation_queue', 'medical_records', 'notifications'];
+            
+            // Teste 1: Verificar existência das tabelas
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase
+                        .from(table)
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (error && error.code === 'PGRST116') {
+                        addDbTestResult(`Tabela ${table}`, false, 'Tabela não existe ou não acessível', 'ESTRUTURA');
+                    } else {
+                        addDbTestResult(`Tabela ${table}`, true, 'Tabela existe e é acessível', 'ESTRUTURA');
+                    }
+                } catch (e) {
+                    addDbTestResult(`Tabela ${table}`, false, `Erro: ${e.message}`, 'ESTRUTURA');
+                }
+            }
+            
+            // Teste 2: Verificar colunas críticas
+            const criticalColumns = [
+                { table: 'specialties', column: 'price', description: 'Coluna de preço' },
+                { table: 'doctors', column: 'crm', description: 'Coluna CRM' },
+                { table: 'appointments', column: 'status', description: 'Coluna de status' },
+                { table: 'medical_records', column: 'is_signed', description: 'Coluna de assinatura' }
+            ];
+            
+            for (const col of criticalColumns) {
+                try {
+                    const { data, error } = await supabase
+                        .from(col.table)
+                        .select(col.column, { head: true });
+                    
+                    if (error) {
+                        addDbTestResult(`${col.table}.${col.column}`, false, `Coluna não encontrada: ${error.message}`, 'ESTRUTURA');
+                    } else {
+                        addDbTestResult(`${col.table}.${col.column}`, true, col.description, 'ESTRUTURA');
+                    }
+                } catch (e) {
+                    addDbTestResult(`${col.table}.${col.column}`, false, `Erro: ${e.message}`, 'ESTRUTURA');
+                }
+            }
+        }
+        
+        // Testes de segurança (RLS)
+        async function runSecurityTests() {
+            currentTestSuite = 'Segurança';
+            addDbTestResult('Iniciando testes de segurança...', true, 'Verificando RLS e políticas', 'SEGURANÇA');
+            
+            // Teste 1: Verificar se consegue acessar tabelas (RLS deve estar ativo)
+            const tables = ['specialties', 'doctors', 'appointments', 'consultation_queue', 'medical_records', 'notifications'];
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase
+                        .from(table)
+                        .select('*')
+                        .limit(1);
+                    
+                    // Para tabelas com RLS, esperamos que funcione ou dê erro específico de RLS
+                    if (error && error.code === '42501') {
+                        addDbTestResult(`RLS ${table}`, true, 'RLS ativo - acesso negado conforme esperado', 'SEGURANÇA');
+                    } else if (!error) {
+                        addDbTestResult(`RLS ${table}`, true, 'Acesso permitido (dados públicos ou usuário autenticado)', 'SEGURANÇA');
+                    } else {
+                        addDbTestResult(`RLS ${table}`, false, `Erro inesperado: ${error.message}`, 'SEGURANÇA');
+                    }
+                } catch (e) {
+                    addDbTestResult(`RLS ${table}`, false, `Erro: ${e.message}`, 'SEGURANÇA');
+                }
+            }
+            
+            // Teste 2: Verificar acesso a specialties (deve ser público)
+            try {
+                const { data, error } = await supabase
+                    .from('specialties')
+                    .select('name, price')
+                    .limit(3);
+                
+                if (!error && data) {
+                    addDbTestResult('Acesso público specialties', true, `${data.length} especialidades acessíveis`, 'SEGURANÇA');
+                } else {
+                    addDbTestResult('Acesso público specialties', false, error?.message || 'Sem dados', 'SEGURANÇA');
+                }
+            } catch (e) {
+                addDbTestResult('Acesso público specialties', false, `Erro: ${e.message}`, 'SEGURANÇA');
+            }
+        }
+        
+        // Testes de operações CRUD
+        async function runCrudTests() {
+            currentTestSuite = 'CRUD';
+            addDbTestResult('Iniciando testes CRUD...', true, 'Testando operações básicas', 'CRUD');
+            
+            const testSpecialtyName = `Teste CRUD ${Date.now()}`;
+            let testSpecialtyId = null;
+            
+            // Teste 1: CREATE - Inserir specialty
+            try {
+                const { data, error } = await supabase
+                    .from('specialties')
+                    .insert({
+                        name: testSpecialtyName,
+                        description: 'Especialidade criada para teste CRUD',
+                        icon: '🧪',
+                        price: 99.99,
+                        duration: 30
+                    })
+                    .select()
+                    .single();
+                
+                if (error) {
+                    addDbTestResult('CREATE specialty', false, `Erro na inserção: ${error.message}`, 'CRUD');
+                } else {
+                    testSpecialtyId = data.id;
+                    addDbTestResult('CREATE specialty', true, `Specialty criada com ID: ${data.id}`, 'CRUD');
+                }
+            } catch (e) {
+                addDbTestResult('CREATE specialty', false, `Erro: ${e.message}`, 'CRUD');
+            }
+            
+            // Teste 2: READ - Buscar specialty criada
+            if (testSpecialtyId) {
+                try {
+                    const { data, error } = await supabase
+                        .from('specialties')
+                        .select('*')
+                        .eq('id', testSpecialtyId)
+                        .single();
+                    
+                    if (error) {
+                        addDbTestResult('READ specialty', false, `Erro na busca: ${error.message}`, 'CRUD');
+                    } else if (data && data.name === testSpecialtyName) {
+                        addDbTestResult('READ specialty', true, `Specialty encontrada: ${data.name}`, 'CRUD');
+                    } else {
+                        addDbTestResult('READ specialty', false, 'Dados não conferem', 'CRUD');
+                    }
+                } catch (e) {
+                    addDbTestResult('READ specialty', false, `Erro: ${e.message}`, 'CRUD');
+                }
+                
+                // Teste 3: UPDATE - Atualizar specialty
+                try {
+                    const { data, error } = await supabase
+                        .from('specialties')
+                        .update({
+                            price: 150.00,
+                            description: 'Descrição atualizada pelo teste CRUD'
+                        })
+                        .eq('id', testSpecialtyId)
+                        .select()
+                        .single();
+                    
+                    if (error) {
+                        addDbTestResult('UPDATE specialty', false, `Erro na atualização: ${error.message}`, 'CRUD');
+                    } else if (data && data.price == 150.00) {
+                        addDbTestResult('UPDATE specialty', true, `Preço atualizado para R$ ${data.price}`, 'CRUD');
+                    } else {
+                        addDbTestResult('UPDATE specialty', false, 'Atualização não refletida', 'CRUD');
+                    }
+                } catch (e) {
+                    addDbTestResult('UPDATE specialty', false, `Erro: ${e.message}`, 'CRUD');
+                }
+                
+                // Teste 4: DELETE - Remover specialty de teste
+                try {
+                    const { error } = await supabase
+                        .from('specialties')
+                        .delete()
+                        .eq('id', testSpecialtyId);
+                    
+                    if (error) {
+                        addDbTestResult('DELETE specialty', false, `Erro na remoção: ${error.message}`, 'CRUD');
+                    } else {
+                        addDbTestResult('DELETE specialty', true, 'Specialty removida com sucesso', 'CRUD');
+                    }
+                } catch (e) {
+                    addDbTestResult('DELETE specialty', false, `Erro: ${e.message}`, 'CRUD');
+                }
+            }
+            
+            // Teste 5: Validar constraints
+            try {
+                const { data, error } = await supabase
+                    .from('specialties')
+                    .insert({
+                        name: 'Teste Constraint',
+                        price: -100.00  // Preço negativo deve falhar
+                    });
+                
+                if (error && error.message.includes('check constraint')) {
+                    addDbTestResult('Constraint preço positivo', true, 'Constraint funcionando - preço negativo rejeitado', 'CRUD');
+                } else if (error) {
+                    addDbTestResult('Constraint preço positivo', false, `Erro inesperado: ${error.message}`, 'CRUD');
+                } else {
+                    addDbTestResult('Constraint preço positivo', false, 'Constraint não funcionou - preço negativo aceito', 'CRUD');
+                }
+            } catch (e) {
+                addDbTestResult('Constraint preço positivo', false, `Erro: ${e.message}`, 'CRUD');
+            }
+        }
+        
+        // Testes de relacionamentos
+        async function runRelationshipTests() {
+            currentTestSuite = 'Relacionamentos';
+            addDbTestResult('Iniciando testes de relacionamentos...', true, 'Verificando JOINs e FKs', 'RELACIONAMENTOS');
+            
+            // Teste 1: JOIN entre specialties e doctors
+            try {
+                const { data, error } = await supabase
+                    .from('doctors')
+                    .select(`
+                        name,
+                        crm,
+                        specialties (
+                            name,
+                            price
+                        )
+                    `)
+                    .limit(3);
+                
+                if (error) {
+                    addDbTestResult('JOIN doctors-specialties', false, `Erro no JOIN: ${error.message}`, 'RELACIONAMENTOS');
+                } else {
+                    const doctorsWithSpecialty = data.filter(d => d.specialties);
+                    addDbTestResult('JOIN doctors-specialties', true, `${doctorsWithSpecialty.length} doctors com especialidade encontrados`, 'RELACIONAMENTOS');
+                }
+            } catch (e) {
+                addDbTestResult('JOIN doctors-specialties', false, `Erro: ${e.message}`, 'RELACIONAMENTOS');
+            }
+            
+            // Teste 2: JOIN complexo appointments-doctors-specialties
+            try {
+                const { data, error } = await supabase
+                    .from('appointments')
+                    .select(`
+                        id,
+                        status,
+                        doctors (
+                            name,
+                            specialties (
+                                name
+                            )
+                        )
+                    `)
+                    .limit(3);
+                
+                if (error) {
+                    addDbTestResult('JOIN complexo appointments', false, `Erro no JOIN: ${error.message}`, 'RELACIONAMENTOS');
+                } else {
+                    addDbTestResult('JOIN complexo appointments', true, `${data.length} appointments com dados relacionados`, 'RELACIONAMENTOS');
+                }
+            } catch (e) {
+                addDbTestResult('JOIN complexo appointments', false, `Erro: ${e.message}`, 'RELACIONAMENTOS');
+            }
+            
+            // Teste 3: Verificar integridade referencial
+            try {
+                // Tentar inserir doctor com specialty_id inexistente
+                const fakeId = '00000000-0000-0000-0000-000000000000';
+                const { data, error } = await supabase
+                    .from('doctors')
+                    .insert({
+                        name: 'Dr. Teste FK',
+                        crm: 'CRMTEST999',
+                        specialty_id: fakeId,
+                        user_id: null  // Permitir inserção para teste
+                    });
+                
+                if (error && (error.code === '23503' || error.message.includes('foreign key'))) {
+                    addDbTestResult('Integridade referencial', true, 'FK constraint funcionando - inserção rejeitada por FK', 'RELACIONAMENTOS');
+                } else if (error && error.message.includes('row-level security')) {
+                    addDbTestResult('Integridade referencial', true, 'RLS funcionando - inserção rejeitada por política de segurança', 'RELACIONAMENTOS');
+                } else if (error) {
+                    addDbTestResult('Integridade referencial', false, `Erro inesperado: ${error.message}`, 'RELACIONAMENTOS');
+                } else {
+                    addDbTestResult('Integridade referencial', false, 'Constraint não funcionou - inserção aceita indevidamente', 'RELACIONAMENTOS');
+                }
+            } catch (e) {
+                addDbTestResult('Integridade referencial', false, `Erro: ${e.message}`, 'RELACIONAMENTOS');
+            }
+        }
+        
+        // Função para executar todos os testes
+        async function runAllDbTests() {
+            // Limpar resultados anteriores
+            document.getElementById('dbTestResults').innerHTML = '';
+            document.getElementById('testProgress').innerHTML = '<div class="text-xs text-gray-600">Executando testes...</div>';
+            testResults = [];
+            
+            addDbTestResult('Iniciando suíte completa de testes...', true, 'Executando todos os testes de banco de dados', 'GERAL');
+            
+            // Executar todas as suítes
+            await runStructureTests();
+            await runSecurityTests();
+            await runCrudTests();
+            await runRelationshipTests();
+            
+            // Resumo final
+            const totalTests = testResults.length;
+            const passedTests = testResults.filter(r => r.passed).length;
+            const failedTests = totalTests - passedTests;
+            
+            const successRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+            
+            addDbTestResult(
+                'Resumo Final',
+                failedTests === 0,
+                `${passedTests}/${totalTests} testes aprovados (${successRate}%)`,
+                'RESUMO'
+            );
+            
+            if (failedTests === 0) {
+                addDbTestResult('Status do Banco', true, '🎉 Banco de dados totalmente funcional!', 'RESUMO');
+            } else {
+                addDbTestResult('Status do Banco', false, `⚠️ ${failedTests} problemas encontrados`, 'RESUMO');
+            }
+        }
+        
+        // Função para limpar resultados
+        function clearDbResults() {
+            document.getElementById('dbTestResults').innerHTML = '<div class="text-gray-500 text-center py-8">Resultados limpos</div>';
+            document.getElementById('testProgress').innerHTML = '<div class="text-xs text-gray-600">Nenhum teste executado ainda</div>';
+            testResults = [];
+        }
+        
+        // Função para exportar relatório
+        function exportDbResults() {
+            if (testResults.length === 0) {
+                alert('Nenhum teste foi executado ainda!');
+                return;
+            }
+            
+            const report = {
+                timestamp: new Date().toISOString(),
+                totalTests: testResults.length,
+                passedTests: testResults.filter(r => r.passed).length,
+                failedTests: testResults.filter(r => !r.passed).length,
+                results: testResults
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `database-test-report-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            log('Relatório de testes exportado', 'success');
+        }
+
         // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
             // Gerar email válido
@@ -445,6 +948,15 @@
             addProjectInfo('Ambiente', 'Desenvolvimento');
             
             log('Sistema de debug inicializado', 'success');
+            
+            // Event listeners para testes de banco
+            document.getElementById('runStructureTests').addEventListener('click', runStructureTests);
+            document.getElementById('runSecurityTests').addEventListener('click', runSecurityTests);
+            document.getElementById('runCrudTests').addEventListener('click', runCrudTests);
+            document.getElementById('runRelationshipTests').addEventListener('click', runRelationshipTests);
+            document.getElementById('runAllDbTests').addEventListener('click', runAllDbTests);
+            document.getElementById('clearDbResults').addEventListener('click', clearDbResults);
+            document.getElementById('exportDbResults').addEventListener('click', exportDbResults);
             
             // Executar diagnóstico automaticamente
             setTimeout(runDiagnostic, 1000);

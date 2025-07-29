@@ -3,120 +3,464 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMed - Dashboard</title>
+    <title>TeleMed - Telemedicina do Futuro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'bounce-in': 'bounceIn 0.6s ease-out',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .hero-bg {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(124, 58, 237, 0.85)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect fill="%2306b6d4" width="1200" height="800"/><g fill="%23ffffff" fill-opacity="0.1"><rect x="50" y="150" width="200" height="300" rx="10"/><rect x="300" y="100" width="200" height="350" rx="10"/><rect x="550" y="120" width="200" height="330" rx="10"/><rect x="800" y="80" width="200" height="370" rx="10"/><rect x="1000" y="140" width="150" height="310" rx="10"/></g><g fill="%23ffffff" fill-opacity="0.2"><circle cx="150" cy="200" r="25"/><circle cx="400" cy="180" r="25"/><circle cx="650" cy="190" r="25"/><circle cx="900" cy="160" r="25"/><circle cx="1075" cy="200" r="20"/></g></svg>');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        
+        .specialty-card {
+            transition: all 0.3s ease;
+        }
+        
+        .specialty-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <!-- Header com informações do usuário e logout -->
-    <header class="bg-white shadow-sm border-b">
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-gray-900">TeleMed</h1>
+                    <h1 class="text-2xl font-bold text-primary-600">TeleMed</h1>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span id="userWelcome" class="text-gray-700">Carregando...</span>
-                    <button id="logoutButton" 
-                            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors">
-                        Sair
+                    <button onclick="redirectToDoctors()" 
+                            class="text-primary-600 hover:text-primary-700 font-medium transition-colors border border-primary-600 px-4 py-2 rounded-full hover:bg-primary-50">
+                        Sou Médico
+                    </button>
+                    <button onclick="redirectToAuth()" 
+                            class="text-gray-600 hover:text-primary-600 font-medium transition-colors">
+                        Entrar
+                    </button>
+                    <button onclick="redirectToAuth()" 
+                            class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
+                        Cadastrar
                     </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Conteúdo principal -->
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="px-4 py-6 sm:px-0">
-            <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 mx-auto">
-                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Dashboard</h2>
-        
-                <div class="space-y-4">
-                    <button id="colorButton" 
-                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition-colors">
-                        Change Background Color
+    <!-- Hero Section -->
+    <section class="hero-bg text-white pt-20 pb-16">
+        <div class="max-w-7xl mx-auto px-4 py-16">
+            <div class="text-center animate-fade-in">
+                <h2 class="text-5xl md:text-6xl font-bold mb-6">Telemedicina do Futuro</h2>
+                <p class="text-xl md:text-2xl mb-8 opacity-90">Consultas médicas online com tecnologia de ponta</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="scrollToSpecialties()" 
+                            class="bg-white text-primary-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all transform hover:scale-105">
+                        Ver Especialidades
                     </button>
-                    
-                    <div id="counter" class="text-center">
-                        <p class="text-xl font-semibold text-gray-700">Counter: <span id="count">0</span></p>
-                        <button id="incrementButton" 
-                                class="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition-colors">
-                            Increment
-                        </button>
+                    <button onclick="redirectToAuth()" 
+                            class="bg-red-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-red-700 transition-all transform hover:scale-105">
+                        Consulta Agora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="bg-white py-16">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center p-6 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg animate-bounce-in">
+                    <div class="text-4xl font-bold">45</div>
+                    <div class="text-sm opacity-90">Médicos Online</div>
+                </div>
+                <div class="text-center p-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg animate-bounce-in" style="animation-delay: 0.1s;">
+                    <div class="text-4xl font-bold">233</div>
+                    <div class="text-sm opacity-90">Consultas Hoje</div>
+                </div>
+                <div class="text-center p-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg animate-bounce-in" style="animation-delay: 0.2s;">
+                    <div class="text-4xl font-bold">12.2k</div>
+                    <div class="text-sm opacity-90">Pacientes Atendidos</div>
+                </div>
+                <div class="text-center p-6 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl shadow-lg animate-bounce-in" style="animation-delay: 0.3s;">
+                    <div class="text-4xl font-bold">4.9★</div>
+                    <div class="text-sm opacity-90">Avaliação Média</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Specialties Section -->
+    <section id="specialties" class="bg-gray-50 py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <h3 class="text-4xl font-bold text-gray-900 mb-4">Especialidades Médicas</h3>
+                <p class="text-xl text-gray-600">Escolha a especialidade que você precisa</p>
+            </div>
+
+            <!-- Search -->
+            <div class="max-w-2xl mx-auto mb-12">
+                <div class="relative">
+                    <input type="text" 
+                           placeholder="🔍 Buscar especialidade..."
+                           class="w-full px-6 py-4 text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-lg">
+                </div>
+            </div>
+
+            <!-- Specialties Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Cardiologia -->
+                <div class="specialty-card bg-red-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold">Cardiologia</h4>
+                        <div class="text-3xl">❤️</div>
+                    </div>
+                    <p class="text-sm opacity-90 mb-4">Cuidados com o coração e sistema cardiovascular</p>
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span>⏱️ 10 min de espera</span>
+                        <span>👨‍⚕️ 28 médicos online</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex text-yellow-400">
+                            <span>★★★★★</span>
+                            <span class="text-white ml-1 text-xs">4.9 (1.2k avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-right">
+                        <span class="text-2xl font-bold">R$ 89,90</span>
+                    </div>
+                </div>
+
+                <!-- Pediatria -->
+                <div class="specialty-card bg-green-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold">Pediatria</h4>
+                        <div class="text-3xl">👶</div>
+                    </div>
+                    <p class="text-sm opacity-90 mb-4">Cuidados médicos para crianças e adolescentes</p>
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span>⏱️ 23 min de espera</span>
+                        <span>👨‍⚕️ 2 médicos online</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex text-yellow-400">
+                            <span>★★★★★</span>
+                            <span class="text-white ml-1 text-xs">4.8 (890 avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-right">
+                        <span class="text-2xl font-bold">R$ 79,90</span>
+                    </div>
+                </div>
+
+                <!-- Dermatologia -->
+                <div class="specialty-card bg-orange-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold">Dermatologia</h4>
+                        <div class="text-3xl">🧴</div>
+                    </div>
+                    <p class="text-sm opacity-90 mb-4">Cuidados com a pele, cabelos e unhas</p>
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span>⏱️ 18 min de espera</span>
+                        <span>👨‍⚕️ 4 médicos online</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex text-yellow-400">
+                            <span>★★★★★</span>
+                            <span class="text-white ml-1 text-xs">4.7 (654 avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-right">
+                        <span class="text-2xl font-bold">R$ 99,90</span>
+                    </div>
+                </div>
+
+                <!-- Psiquiatria -->
+                <div class="specialty-card bg-purple-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold">Psiquiatria</h4>
+                        <div class="text-3xl">🧠</div>
+                    </div>
+                    <p class="text-sm opacity-90 mb-4">Saúde mental e transtornos psiquiátricos</p>
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span>⏱️ 7 min de espera</span>
+                        <span>👨‍⚕️ 19 médicos online</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex text-yellow-400">
+                            <span>★★★★★</span>
+                            <span class="text-white ml-1 text-xs">4.9 (2.1k avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-right">
+                        <span class="text-2xl font-bold">R$ 129,90</span>
+                    </div>
+                </div>
+
+                <!-- Ginecologia -->
+                <div class="specialty-card bg-blue-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold">Ginecologia</h4>
+                        <div class="text-3xl">👩</div>
+                    </div>
+                    <p class="text-sm opacity-90 mb-4">Saúde da mulher e sistema reprodutivo</p>
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span>⏱️ 7 min de espera</span>
+                        <span>👨‍⚕️ 8 médicos online</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex text-yellow-400">
+                            <span>★★★★★</span>
+                            <span class="text-white ml-1 text-xs">4.8 (1.5k avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-right">
+                        <span class="text-2xl font-bold">R$ 89,90</span>
+                    </div>
+                </div>
+
+                <!-- Neurologia -->
+                <div class="specialty-card bg-gray-600 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold">Neurologia</h4>
+                        <div class="text-3xl">🧠</div>
+                    </div>
+                    <p class="text-sm opacity-90 mb-4">Sistema nervoso e transtornos neurológicos</p>
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span>⏱️ 15 min de espera</span>
+                        <span>👨‍⚕️ 21 médicos online</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex text-yellow-400">
+                            <span>★★★★★</span>
+                            <span class="text-white ml-1 text-xs">4.6 (432 avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-right">
+                        <span class="text-2xl font-bold">R$ 139,90</span>
+                    </div>
+                </div>
+
+                <!-- Ortopedia -->
+                <div class="specialty-card bg-gray-700 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold">Ortopedia</h4>
+                        <div class="text-3xl">🦴</div>
+                    </div>
+                    <p class="text-sm opacity-90 mb-4">Ossos, articulações e sistema músculo-esquelético</p>
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span>⏱️ 14 min de espera</span>
+                        <span>👨‍⚕️ 21 médicos online</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex text-yellow-400">
+                            <span>★★★★★</span>
+                            <span class="text-white ml-1 text-xs">4.5 (789 avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-right">
+                        <span class="text-2xl font-bold">R$ 109,90</span>
+                    </div>
+                </div>
+
+                <!-- Endocrinologia -->
+                <div class="specialty-card bg-red-600 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold">Endocrinologia</h4>
+                        <div class="text-3xl">🔬</div>
+                    </div>
+                    <p class="text-sm opacity-90 mb-4">Hormônios, metabolismo e glândulas endócrinas</p>
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span>⏱️ 20 min de espera</span>
+                        <span>👨‍⚕️ 14 médicos online</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex text-yellow-400">
+                            <span>★★★★★</span>
+                            <span class="text-white ml-1 text-xs">4.7 (567 avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-right">
+                        <span class="text-2xl font-bold">R$ 119,90</span>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
+    </section>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase.js"></script>
-    <script src="js/session.js"></script>
+    <!-- Features Section -->
+    <section class="bg-white py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <h3 class="text-4xl font-bold text-center text-gray-900 mb-12">Por que escolher TeleMed?</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center p-8 bg-gray-50 rounded-xl shadow-lg animate-slide-up">
+                    <div class="text-6xl mb-6">🎥</div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Videochamadas HD</h4>
+                    <p class="text-gray-600 text-lg">Consultas por vídeo com qualidade profissional</p>
+                </div>
+                <div class="text-center p-8 bg-gray-50 rounded-xl shadow-lg animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="text-6xl mb-6">💊</div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Prescrição Digital</h4>
+                    <p class="text-gray-600 text-lg">Receitas médicas digitais válidas</p>
+                </div>
+                <div class="text-center p-8 bg-gray-50 rounded-xl shadow-lg animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="text-6xl mb-6">📱</div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Disponível 24/7</h4>
+                    <p class="text-gray-600 text-lg">Atendimento médico a qualquer hora</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="bg-primary-600 text-white py-16">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h3 class="text-4xl font-bold mb-6">Pronto para começar?</h3>
+            <p class="text-xl mb-8 opacity-90">Cadastre-se agora e tenha acesso a consultas médicas de qualidade</p>
+            <button onclick="redirectToAuth()" 
+                    class="bg-white text-primary-600 px-12 py-4 rounded-full font-bold text-xl hover:bg-gray-100 transition-all transform hover:scale-105">
+                Cadastrar Agora
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="text-2xl font-bold mb-4">TeleMed</h4>
+                    <p class="text-gray-400">Telemedicina do futuro, disponível hoje.</p>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Especialidades</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li>Cardiologia</li>
+                        <li>Pediatria</li>
+                        <li>Dermatologia</li>
+                        <li>Psiquiatria</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Suporte</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li>Central de Ajuda</li>
+                        <li>Contato</li>
+                        <li>FAQ</li>
+                        <li>Termos de Uso</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Contato</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li>📞 (11) 9999-9999</li>
+                        <li>📧 contato@telemed.com</li>
+                        <li>🕒 24h por dia</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 TeleMed. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
     <script>
-        // Verificar autenticação ao carregar a página
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // Proteger a página - redirecionar se não autenticado
-                const authenticated = await requireAuth();
-                
-                if (authenticated) {
-                    // Carregar dados do usuário
-                    const user = await getCurrentUser();
-                    if (user) {
-                        document.getElementById('userWelcome').textContent = `Olá, ${user.name}!`;
-                    }
+        // Função para redirecionar para autenticação
+        function redirectToAuth() {
+            window.location.href = 'auth.html';
+        }
+
+        // Função para redirecionar para página de médicos
+        function redirectToDoctors() {
+            window.location.href = 'doctors.html';
+        }
+
+        // Função para scroll suave até especialidades
+        function scrollToSpecialties() {
+            document.getElementById('specialties').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        // Animações ao scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
                 }
-            } catch (error) {
-                console.error('Erro na inicialização:', error);
-                // Em caso de erro, mostrar interface básica
-                document.getElementById('userWelcome').textContent = 'Usuário';
-            }
+            });
+        }, observerOptions);
+
+        // Observar elementos com animação
+        document.addEventListener('DOMContentLoaded', () => {
+            const animatedElements = document.querySelectorAll('.animate-slide-up, .animate-bounce-in');
+            animatedElements.forEach(el => {
+                el.style.animationPlayState = 'paused';
+                observer.observe(el);
+            });
         });
 
-        // Funcionalidade de logout
-        document.getElementById('logoutButton').addEventListener('click', async () => {
-            const button = document.getElementById('logoutButton');
-            const originalText = button.textContent;
+        // Efeito de hover nos cards de especialidade
+        document.querySelectorAll('.specialty-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-8px) scale(1.02)';
+            });
             
-            button.textContent = 'Saindo...';
-            button.disabled = true;
-            
-            try {
-                const success = await logout();
-                
-                if (!success) {
-                    button.textContent = originalText;
-                    button.disabled = false;
-                    alert('Erro ao fazer logout. Tente novamente.');
-                }
-            } catch (error) {
-                console.error('Erro no logout:', error);
-                button.textContent = originalText;
-                button.disabled = false;
-                alert('Erro ao fazer logout. Tente novamente.');
-            }
-        });
-
-        // Counter functionality (funcionalidade original mantida)
-        let count = 0;
-        const countElement = document.getElementById('count');
-        const incrementButton = document.getElementById('incrementButton');
-        
-        incrementButton.addEventListener('click', () => {
-            count++;
-            countElement.textContent = count;
-        });
-
-        // Background color change functionality (funcionalidade original mantida)
-        const colorButton = document.getElementById('colorButton');
-        const colors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-pink-100', 'bg-yellow-100'];
-        let currentColorIndex = 0;
-
-        colorButton.addEventListener('click', () => {
-            document.body.classList.remove(colors[currentColorIndex]);
-            currentColorIndex = (currentColorIndex + 1) % colors.length;
-            document.body.classList.add(colors[currentColorIndex]);
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+            });
         });
     </script>
 </body>

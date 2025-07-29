@@ -1,0 +1,15 @@
+.zoom:hover { transform: scale(1.05); }
+.glow:hover { 
+    transform: scale(1.05); 
+    box-shadow: 0 0 50px rgba(102, 126, 234, 0.8); 
+}
+.aurora-bg {
+    background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 400% 400%;
+    animation: aurora 15s ease infinite;
+}
+.glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}

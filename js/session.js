@@ -94,7 +94,7 @@ async function redirectIfAuthenticated() {
     const authenticated = await isAuthenticated();
     
     if (authenticated) {
-        window.location.href = 'index.html';
+        window.location.href = 'dashboard.html';
         return true;
     }
     

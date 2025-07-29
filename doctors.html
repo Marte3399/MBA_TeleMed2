@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleMed - Área Médica | Transforme sua Prática Médica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        medical: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'bounce-in': 'bounceIn 0.6s ease-out',
+                        'pulse-slow': 'pulse 3s infinite',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .hero-medical-bg {
+            background: linear-gradient(135deg, rgba(22, 163, 74, 0.9), rgba(21, 128, 61, 0.9)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect fill="%2316a34a" width="1200" height="800"/><g fill="%23ffffff" fill-opacity="0.1"><path d="M100 200h100v50h50v100h-50v50H100v-50H50V250h50v-50z"/><path d="M300 150h100v50h50v100h-50v50H300v-50h-50V200h50v-50z"/><path d="M500 180h100v50h50v100h-50v50H500v-50h-50V230h50v-50z"/><path d="M700 120h100v50h50v100h-50v50H700v-50h-50V170h50v-50z"/><path d="M900 160h100v50h50v100h-50v50H900v-50h-50V210h50v-50z"/></g></svg>');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        
+        .benefit-card {
+            transition: all 0.3s ease;
+        }
+        
+        .benefit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-primary-600">TeleMed</h1>
+                    <span class="ml-2 text-sm text-gray-500 font-medium">Área Médica</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="redirectToHome()" 
+                            class="text-gray-600 hover:text-primary-600 font-medium transition-colors">
+                        Para Pacientes
+                    </button>
+                    <button onclick="redirectToAuth()" 
+                            class="text-gray-600 hover:text-primary-600 font-medium transition-colors">
+                        Entrar
+                    </button>
+                    <button onclick="redirectToDoctorSignup()" 
+                            class="bg-medical-600 hover:bg-medical-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
+                        Cadastrar-se
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-medical-bg text-white pt-20 pb-16">
+        <div class="max-w-7xl mx-auto px-4 py-16">
+            <div class="text-center animate-fade-in">
+                <h2 class="text-5xl md:text-6xl font-bold mb-6">Transforme sua Prática Médica</h2>
+                <p class="text-xl md:text-2xl mb-8 opacity-90">Atenda mais pacientes, aumente sua renda e tenha flexibilidade total</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="scrollToBenefits()" 
+                            class="bg-white text-medical-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all transform hover:scale-105">
+                        Ver Benefícios
+                    </button>
+                    <button onclick="redirectToDoctorSignup()" 
+                            class="bg-yellow-500 text-white px-8 py-4 rounded-full font-semibold hover:bg-yellow-600 transition-all transform hover:scale-105">
+                        Começar Agora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="bg-white py-16">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-gray-900 mb-4">Números que Impressionam</h3>
+                <p class="text-xl text-gray-600">Veja o impacto da TeleMed na carreira dos nossos médicos</p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center p-6 bg-gradient-to-r from-medical-500 to-medical-600 text-white rounded-xl shadow-lg animate-bounce-in">
+                    <div class="text-4xl font-bold">R$ 8.500</div>
+                    <div class="text-sm opacity-90">Renda Média Mensal</div>
+                </div>
+                <div class="text-center p-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg animate-bounce-in" style="animation-delay: 0.1s;">
+                    <div class="text-4xl font-bold">1.2k+</div>
+                    <div class="text-sm opacity-90">Médicos Ativos</div>
+                </div>
+                <div class="text-center p-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg animate-bounce-in" style="animation-delay: 0.2s;">
+                    <div class="text-4xl font-bold">95%</div>
+                    <div class="text-sm opacity-90">Satisfação Médica</div>
+                </div>
+                <div class="text-center p-6 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl shadow-lg animate-bounce-in" style="animation-delay: 0.3s;">
+                    <div class="text-4xl font-bold">24/7</div>
+                    <div class="text-sm opacity-90">Flexibilidade Total</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section id="benefits" class="bg-gray-50 py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <h3 class="text-4xl font-bold text-gray-900 mb-4">Por que Escolher a TeleMed?</h3>
+                <p class="text-xl text-gray-600">Benefícios exclusivos para profissionais médicos</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Renda Extra -->
+                <div class="benefit-card bg-white p-8 rounded-xl shadow-lg">
+                    <div class="text-5xl mb-6 text-medical-600">💰</div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Renda Extra Garantida</h4>
+                    <p class="text-gray-600 mb-4">Aumente sua renda em até 70% atendendo online nos seus horários livres</p>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>✅ Pagamento por consulta: R$ 45-85</li>
+                        <li>✅ Recebimento em 24h</li>
+                        <li>✅ Sem mensalidades ou taxas</li>
+                    </ul>
+                </div>
+
+                <!-- Flexibilidade -->
+                <div class="benefit-card bg-white p-8 rounded-xl shadow-lg">
+                    <div class="text-5xl mb-6 text-blue-600">⏰</div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Flexibilidade Total</h4>
+                    <p class="text-gray-600 mb-4">Atenda quando e onde quiser, no seu próprio ritmo</p>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>✅ Defina seus próprios horários</li>
+                        <li>✅ Trabalhe de qualquer lugar</li>
+                        <li>✅ Pause quando precisar</li>
+                    </ul>
+                </div>
+
+                <!-- Tecnologia -->
+                <div class="benefit-card bg-white p-8 rounded-xl shadow-lg">
+                    <div class="text-5xl mb-6 text-purple-600">🚀</div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Tecnologia Avançada</h4>
+                    <p class="text-gray-600 mb-4">Plataforma completa com todas as ferramentas que você precisa</p>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>✅ Videochamadas HD</li>
+                        <li>✅ Prontuário eletrônico</li>
+                        <li>✅ Prescrição digital</li>
+                    </ul>
+                </div>
+
+                <!-- Suporte -->
+                <div class="benefit-card bg-white p-8 rounded-xl shadow-lg">
+                    <div class="text-5xl mb-6 text-red-600">🤝</div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Suporte Completo</h4>
+                    <p class="text-gray-600 mb-4">Equipe dedicada para ajudar você em todos os momentos</p>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>✅ Treinamento gratuito</li>
+                        <li>✅ Suporte técnico 24/7</li>
+                        <li>✅ Consultoria médica</li>
+                    </ul>
+                </div>
+
+                <!-- Pacientes -->
+                <div class="benefit-card bg-white p-8 rounded-xl shadow-lg">
+                    <div class="text-5xl mb-6 text-green-600">👥</div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Mais Pacientes</h4>
+                    <p class="text-gray-600 mb-4">Acesso a milhares de pacientes em todo o Brasil</p>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>✅ Base de 50k+ pacientes</li>
+                        <li>✅ Marketing digital incluso</li>
+                        <li>✅ Fila de consultas garantida</li>
+                    </ul>
+                </div>
+
+                <!-- Crescimento -->
+                <div class="benefit-card bg-white p-8 rounded-xl shadow-lg">
+                    <div class="text-5xl mb-6 text-orange-600">📈</div>
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Crescimento Profissional</h4>
+                    <p class="text-gray-600 mb-4">Desenvolva novas habilidades e expanda sua carreira</p>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>✅ Cursos de telemedicina</li>
+                        <li>✅ Certificações digitais</li>
+                        <li>✅ Networking médico</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it Works Section -->
+    <section class="bg-white py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <h3 class="text-4xl font-bold text-gray-900 mb-4">Como Funciona</h3>
+                <p class="text-xl text-gray-600">Processo simples em 4 passos</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="bg-medical-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-medical-600">1</span>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-2">Cadastro</h4>
+                    <p class="text-gray-600">Envie seus documentos e aguarde aprovação em até 24h</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-blue-600">2</span>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-2">Treinamento</h4>
+                    <p class="text-gray-600">Participe do treinamento gratuito sobre a plataforma</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="bg-purple-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-purple-600">3</span>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-2">Configuração</h4>
+                    <p class="text-gray-600">Configure seus horários e especialidades</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="bg-yellow-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-yellow-600">4</span>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-2">Atendimento</h4>
+                    <p class="text-gray-600">Comece a atender e receber seus pagamentos</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="bg-gray-50 py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <h3 class="text-4xl font-bold text-gray-900 mb-4">O que Dizem Nossos Médicos</h3>
+                <p class="text-xl text-gray-600">Depoimentos reais de profissionais que transformaram suas carreiras</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-medical-500 rounded-full flex items-center justify-center text-white font-bold">
+                            DR
+                        </div>
+                        <div class="ml-4">
+                            <h5 class="font-bold text-gray-900">Dr. Carlos Silva</h5>
+                            <p class="text-sm text-gray-600">Cardiologista</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">"Aumentei minha renda em 60% trabalhando apenas 3 horas por dia na TeleMed. A flexibilidade é incrível!"</p>
+                    <div class="flex text-yellow-400 mt-4">
+                        <span>★★★★★</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                            DRA
+                        </div>
+                        <div class="ml-4">
+                            <h5 class="font-bold text-gray-900">Dra. Ana Costa</h5>
+                            <p class="text-sm text-gray-600">Pediatra</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">"A plataforma é muito intuitiva e o suporte é excepcional. Recomendo para todos os colegas!"</p>
+                    <div class="flex text-yellow-400 mt-4">
+                        <span>★★★★★</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            DR
+                        </div>
+                        <div class="ml-4">
+                            <h5 class="font-bold text-gray-900">Dr. João Santos</h5>
+                            <p class="text-sm text-gray-600">Dermatologista</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">"Consegui expandir meu atendimento para todo o Brasil. A TeleMed revolucionou minha prática médica!"</p>
+                    <div class="flex text-yellow-400 mt-4">
+                        <span>★★★★★</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="bg-medical-600 text-white py-16">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h3 class="text-4xl font-bold mb-6">Pronto para Transformar sua Carreira?</h3>
+            <p class="text-xl mb-8 opacity-90">Junte-se a mais de 1.200 médicos que já aumentaram sua renda com a TeleMed</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button onclick="redirectToDoctorSignup()" 
+                        class="bg-white text-medical-600 px-12 py-4 rounded-full font-bold text-xl hover:bg-gray-100 transition-all transform hover:scale-105">
+                    Cadastrar-se Agora
+                </button>
+                <button onclick="scrollToContact()" 
+                        class="border-2 border-white text-white px-12 py-4 rounded-full font-bold text-xl hover:bg-white hover:text-medical-600 transition-all">
+                    Falar com Consultor
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="bg-white py-16">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h3 class="text-3xl font-bold text-gray-900 mb-8">Ainda tem Dúvidas?</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">📞</div>
+                    <h4 class="font-bold text-gray-900 mb-2">Telefone</h4>
+                    <p class="text-gray-600">(11) 9999-9999</p>
+                    <p class="text-sm text-gray-500">Seg-Sex: 8h às 18h</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl mb-4">📧</div>
+                    <h4 class="font-bold text-gray-900 mb-2">Email</h4>
+                    <p class="text-gray-600">medicos@telemed.com</p>
+                    <p class="text-sm text-gray-500">Resposta em até 2h</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl mb-4">💬</div>
+                    <h4 class="font-bold text-gray-900 mb-2">WhatsApp</h4>
+                    <p class="text-gray-600">(11) 9999-9999</p>
+                    <p class="text-sm text-gray-500">Atendimento 24/7</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="text-2xl font-bold mb-4">TeleMed</h4>
+                    <p class="text-gray-400">Transformando a medicina através da tecnologia.</p>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Para Médicos</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li>Como Funciona</li>
+                        <li>Benefícios</li>
+                        <li>Cadastro</li>
+                        <li>Suporte</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Recursos</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li>Treinamentos</li>
+                        <li>Documentação</li>
+                        <li>FAQ</li>
+                        <li>Blog Médico</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Contato</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li>📞 (11) 9999-9999</li>
+                        <li>📧 medicos@telemed.com</li>
+                        <li>🕒 Suporte 24/7</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 TeleMed. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Função para redirecionar para home (pacientes)
+        function redirectToHome() {
+            window.location.href = 'index.html';
+        }
+
+        // Função para redirecionar para autenticação
+        function redirectToAuth() {
+            window.location.href = 'auth.html';
+        }
+
+        // Função para redirecionar para cadastro de médico
+        function redirectToDoctorSignup() {
+            window.location.href = 'doctor-signup.html';
+        }
+
+        // Função para scroll suave até benefícios
+        function scrollToBenefits() {
+            document.getElementById('benefits').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        // Função para scroll suave até contato
+        function scrollToContact() {
+            document.getElementById('contact').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        // Animações ao scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                }
+            });
+        }, observerOptions);
+
+        // Observar elementos com animação
+        document.addEventListener('DOMContentLoaded', () => {
+            const animatedElements = document.querySelectorAll('.animate-slide-up, .animate-bounce-in');
+            animatedElements.forEach(el => {
+                el.style.animationPlayState = 'paused';
+                observer.observe(el);
+            });
+        });
+
+        // Efeito de hover nos cards de benefícios
+        document.querySelectorAll('.benefit-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

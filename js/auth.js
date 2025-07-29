@@ -90,7 +90,13 @@ function getPasswordStrength(password) {
 
 // Verificar se usuário já está logado ao carregar a página
 document.addEventListener('DOMContentLoaded', async () => {
-    await redirectIfAuthenticated();
+    console.log('Auth page loaded');
+    
+    // TEMPORARIAMENTE DESABILITADO - Para permitir teste de cadastro/login
+    // Permitindo que usuários já logados acessem a tela de auth para facilitar testes
+    // O redirecionamento só acontece após login/cadastro bem-sucedido
+    
+    console.log('Auth page ready for login/register');
 });
 
 // Event listeners dos formulários
@@ -298,7 +304,7 @@ async function handleRegister(e) {
                 
                 // Redirecionar após 2 segundos
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = 'dashboard.html';
                 }, 2000);
             }
         }
@@ -369,7 +375,7 @@ async function handleLogin(e) {
             
             // Redirecionar após 1 segundo
             setTimeout(() => {
-                window.location.href = 'index.html';
+                window.location.href = 'dashboard.html';
             }, 1000);
         }
         
@@ -381,3 +387,5 @@ async function handleLogin(e) {
         setButtonLoading(submitButton, false, originalText);
     }
 }
+
+
