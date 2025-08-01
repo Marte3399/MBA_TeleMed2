@@ -1115,38 +1115,205 @@
                 const specialties = Array.from(document.querySelectorAll('input[name="specialties"]:checked'))
                     .map(input => input.value);
 
+                // Coletar arrays de checkboxes
+                const weeklySchedule = Array.from(document.querySelectorAll('input[name="weeklySchedule"]:checked'))
+                    .map(input => input.value);
+                const availableShifts = Array.from(document.querySelectorAll('input[name="availableShifts"]:checked'))
+                    .map(input => input.value);
+                const serviceModalities = Array.from(document.querySelectorAll('input[name="serviceModalities"]:checked'))
+                    .map(input => input.value);
+                const equipment = Array.from(document.querySelectorAll('input[name="equipment"]:checked'))
+                    .map(input => input.value);
+                const software = Array.from(document.querySelectorAll('input[name="software"]:checked'))
+                    .map(input => input.value);
+                const certifications = Array.from(document.querySelectorAll('input[name="certifications"]:checked'))
+                    .map(input => input.value);
+                const insurance = Array.from(document.querySelectorAll('input[name="insurance"]:checked'))
+                    .map(input => input.value);
+
                 const doctorData = {
                     // Dados pessoais
                     fullName: personalData.get('fullName'),
+                    cpf: personalData.get('cpf'),
+                    rg: personalData.get('rg'),
+                    birthDate: personalData.get('birthDate'),
                     email: personalData.get('email'),
                     phone: personalData.get('phone'),
-                    cpf: personalData.get('cpf'),
-                    birthDate: personalData.get('birthDate'),
+                    address: personalData.get('address'),
                     gender: personalData.get('gender'),
                     
                     // Dados profissionais
                     crm: professionalData.get('crm'),
                     crmState: professionalData.get('crmState'),
+                    crmStatus: professionalData.get('crmStatus'),
+                    medicalSchool: professionalData.get('medicalSchool'),
+                    graduationYear: professionalData.get('graduationYear'),
+                    diplomaRecognized: professionalData.get('diplomaRecognized'),
+                    completionCertificate: professionalData.get('completionCertificate'),
+                    rqe: professionalData.get('rqe'),
+                    residencyCertificate: professionalData.get('residencyCertificate'),
+                    specialistTitle: professionalData.get('specialistTitle'),
+                    specializationCertificates: professionalData.get('specializationCertificates'),
                     specialties: specialties,
                     experienceYears: professionalData.get('experienceYears'),
-                    medicalSchool: professionalData.get('medicalSchool'),
+                    telemedicineExperience: professionalData.get('telemedicineExperience'),
+                    publications: professionalData.get('publications'),
+                    positiveEvaluations: professionalData.get('positiveEvaluations'),
+                    
+                    // Dados financeiros
+                    bank: documentsData.get('bank'),
+                    agency: documentsData.get('agency'),
+                    account: documentsData.get('account'),
+                    pixKey: documentsData.get('pixKey'),
+                    taxStatus: documentsData.get('taxStatus'),
+                    cnpj: documentsData.get('cnpj'),
+                    normalConsultationPrice: documentsData.get('normalConsultationPrice'),
+                    urgentConsultationPrice: documentsData.get('urgentConsultationPrice'),
+                    returnConsultationPrice: documentsData.get('returnConsultationPrice'),
+                    
+                    // Disponibilidade
+                    weeklySchedule: weeklySchedule,
+                    availableShifts: availableShifts,
+                    serviceModalities: serviceModalities,
+                    
+                    // Requisitos técnicos
+                    equipment: equipment,
+                    software: software,
+                    
+                    // Certificações e seguros
+                    certifications: certifications,
+                    insurance: insurance,
+                    
+                    // Aspectos legais
+                    cfmResolution: documentsData.get('cfmResolution') === 'on',
+                    medicalEthics: documentsData.get('medicalEthics') === 'on',
+                    civilResponsibility: documentsData.get('civilResponsibility') === 'on',
+                    serviceContract: documentsData.get('serviceContract') === 'on',
+                    privacyPolicy: documentsData.get('privacyPolicy') === 'on',
+                    platformTerms: documentsData.get('platformTerms') === 'on',
+                    dataProcessing: documentsData.get('dataProcessing') === 'on',
+                    marketingEmails: documentsData.get('marketingEmails') === 'on',
                     
                     // Senha
-                    password: documentsData.get('password'),
-                    
-                    // Consentimentos
-                    termsAccepted: documentsData.get('termsAccepted') === 'on',
-                    dataProcessing: documentsData.get('dataProcessing') === 'on',
-                    marketingEmails: documentsData.get('marketingEmails') === 'on'
+                    password: documentsData.get('password')
                 };
 
                 console.log('Dados do médico:', doctorData);
 
-                // Aqui você implementaria a integração com o Supabase
-                // Por enquanto, vamos simular o sucesso
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Integração com Supabase - Inserir candidatura médica
+                const { data: applicationData, error: applicationError } = await supabase
+                    .from('doctors_applications')
+                    .insert([{
+                        // Dados pessoais
+                        full_name: doctorData.fullName,
+                        cpf: doctorData.cpf,
+                        rg: doctorData.rg,
+                        birth_date: doctorData.birthDate,
+                        email: doctorData.email,
+                        phone: doctorData.phone,
+                        address: doctorData.address,
+                        gender: doctorData.gender,
+                        
+                        // Registro profissional
+                        crm: doctorData.crm,
+                        crm_state: doctorData.crmState,
+                        crm_status: doctorData.crmStatus,
+                        
+                        // Formação acadêmica
+                        medical_school: doctorData.medicalSchool,
+                        graduation_year: parseInt(doctorData.graduationYear),
+                        diploma_recognized: doctorData.diplomaRecognized,
+                        completion_certificate: doctorData.completionCertificate,
+                        
+                        // Especialização
+                        rqe: doctorData.rqe,
+                        residency_certificate: doctorData.residencyCertificate,
+                        specialist_title: doctorData.specialistTitle,
+                        specialization_certificates: doctorData.specializationCertificates,
+                        
+                        // Especialidades
+                        specialties: doctorData.specialties,
+                        
+                        // Experiência
+                        experience_years: doctorData.experienceYears,
+                        telemedicine_experience: doctorData.telemedicineExperience,
+                        publications: doctorData.publications,
+                        positive_evaluations: doctorData.positiveEvaluations,
+                        
+                        // Dados financeiros
+                        bank: doctorData.bank,
+                        agency: doctorData.agency,
+                        account: doctorData.account,
+                        pix_key: doctorData.pixKey,
+                        tax_status: doctorData.taxStatus,
+                        cnpj: doctorData.cnpj,
+                        
+                        // Precificação
+                        normal_consultation_price: parseFloat(doctorData.normalConsultationPrice),
+                        urgent_consultation_price: doctorData.urgentConsultationPrice ? parseFloat(doctorData.urgentConsultationPrice) : null,
+                        return_consultation_price: doctorData.returnConsultationPrice ? parseFloat(doctorData.returnConsultationPrice) : null,
+                        
+                        // Disponibilidade
+                        weekly_schedule: doctorData.weeklySchedule || [],
+                        available_shifts: doctorData.availableShifts || [],
+                        service_modalities: doctorData.serviceModalities || [],
+                        
+                        // Requisitos técnicos
+                        equipment: doctorData.equipment || [],
+                        software: doctorData.software || [],
+                        
+                        // Certificações e seguros
+                        certifications: doctorData.certifications || [],
+                        insurance: doctorData.insurance || [],
+                        
+                        // Aspectos legais
+                        cfm_resolution_accepted: doctorData.cfmResolution,
+                        medical_ethics_accepted: doctorData.medicalEthics,
+                        civil_responsibility_accepted: doctorData.civilResponsibility,
+                        service_contract_accepted: doctorData.serviceContract,
+                        privacy_policy_accepted: doctorData.privacyPolicy,
+                        platform_terms_accepted: doctorData.platformTerms,
+                        data_processing_authorized: doctorData.dataProcessing,
+                        marketing_emails_accepted: doctorData.marketingEmails,
+                        
+                        // Status inicial
+                        application_status: 'pending'
+                    }]);
 
-                showSuccess('Cadastro realizado com sucesso! Você receberá um email com as próximas instruções em breve.');
+                if (applicationError) {
+                    console.error('Erro ao salvar candidatura:', applicationError);
+                    
+                    if (applicationError.code === '23505') {
+                        // Violação de constraint única (CPF ou email duplicado)
+                        if (applicationError.message.includes('cpf')) {
+                            showError('Este CPF já está cadastrado. Verifique se você já possui uma candidatura.');
+                        } else if (applicationError.message.includes('email')) {
+                            showError('Este email já está cadastrado. Verifique se você já possui uma candidatura.');
+                        } else {
+                            showError('Dados duplicados encontrados. Verifique CPF e email.');
+                        }
+                    } else {
+                        showError('Erro ao processar candidatura: ' + applicationError.message);
+                    }
+                    return;
+                }
+
+                // Enviar notificação de candidatura recebida
+                try {
+                    const notificationScript = document.createElement('script');
+                    notificationScript.src = 'js/doctor-notifications.js';
+                    document.head.appendChild(notificationScript);
+                    
+                    notificationScript.onload = async () => {
+                        const notifications = new DoctorNotificationSystem();
+                        await notifications.sendApplicationReceived(applicationData[0]);
+                    };
+                } catch (notificationError) {
+                    console.error('Erro ao enviar notificação:', notificationError);
+                    // Não bloquear o fluxo se a notificação falhar
+                }
+
+                showSuccess('Candidatura enviada com sucesso! Você receberá um email com as próximas instruções em até 24 horas.');
                 
                 // Redirecionar após 3 segundos
                 setTimeout(() => {

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleMed - Painel Administrativo - Candidaturas Médicas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        medical: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-primary-600">TeleMed</h1>
+                    <span class="ml-2 text-sm text-gray-500 font-medium">Painel Administrativo</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="adminWelcome" class="text-gray-700">Admin</span>
+                    <button onclick="logout()" 
+                            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-8">
+                <button onclick="showTab('pending')" class="nav-tab py-4 px-2 border-b-2 border-primary-500 text-primary-600 font-medium">
+                    Pendentes
+                </button>
+                <button onclick="showTab('approved')" class="nav-tab py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium">
+                    Aprovados
+                </button>
+                <button onclick="showTab('rejected')" class="nav-tab py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium">
+                    Rejeitados
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-2 bg-yellow-100 rounded-lg">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Pendentes</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="pendingCount">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Aprovados</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="approvedCount">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-2 bg-red-100 rounded-lg">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Rejeitados</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="rejectedCount">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center">
+                    <div class="p-2 bg-blue-100 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="totalCount">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications List -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900" id="tabTitle">Candidaturas Pendentes</h3>
+            </div>
+            <div class="p-6">
+                <div id="applicationsContainer">
+                    <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+                        <p class="mt-4 text-gray-500">Carregando candidaturas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Detalhes -->
+    <div id="detailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-gray-900">Detalhes da Candidatura</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="modalContent" class="p-6">
+                    <!-- Conteúdo será preenchido dinamicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/session.js"></script>
+    <script>
+        let currentTab = 'pending';
+        let applications = [];
+
+        // Verificar autenticação ao carregar
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const authenticated = await requireAuth();
+                if (authenticated) {
+                    await loadApplications();
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('Erro na inicialização:', error);
+            }
+        });
+
+        // Carregar candidaturas do banco
+        async function loadApplications() {
+            try {
+                const { data, error } = await supabase
+                    .from('doctors_applications')
+                    .select('*')
+                    .order('submitted_at', { ascending: false });
+
+                if (error) {
+                    console.error('Erro ao carregar candidaturas:', error);
+                    return;
+                }
+
+                applications = data || [];
+                displayApplications();
+                updateStats();
+            } catch (error) {
+                console.error('Erro ao carregar candidaturas:', error);
+            }
+        }
+
+        // Exibir candidaturas baseado na aba atual
+        function displayApplications() {
+            const container = document.getElementById('applicationsContainer');
+            const filteredApps = applications.filter(app => {
+                if (currentTab === 'pending') return app.application_status === 'pending';
+                if (currentTab === 'approved') return app.application_status === 'approved';
+                if (currentTab === 'rejected') return app.application_status === 'rejected';
+                return true;
+            });
+
+            if (filteredApps.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Nenhuma candidatura encontrada.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = filteredApps.map(app => `
+                <div class="border border-gray-200 rounded-lg p-4 mb-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h4 class="text-lg font-semibold text-gray-900">${app.full_name}</h4>
+                            <p class="text-sm text-gray-600">CRM: ${app.crm}/${app.crm_state}</p>
+                            <p class="text-sm text-gray-600">Email: ${app.email}</p>
+                            <p class="text-sm text-gray-600">Especialidades: ${Array.isArray(app.specialties) ? app.specialties.join(', ') : 'N/A'}</p>
+                            <p class="text-sm text-gray-500">Enviado em: ${new Date(app.submitted_at).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        <div class="flex flex-col space-y-2">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(app.application_status)}">
+                                ${getStatusText(app.application_status)}
+                            </span>
+                            <button onclick="viewDetails('${app.id}')" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                Ver Detalhes
+                            </button>
+                            ${app.application_status === 'pending' ? `
+                                <button onclick="approveApplication('${app.id}')" 
+                                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                                    Aprovar
+                                </button>
+                                <button onclick="rejectApplication('${app.id}')" 
+                                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                    Rejeitar
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Atualizar estatísticas
+        function updateStats() {
+            const pending = applications.filter(app => app.application_status === 'pending').length;
+            const approved = applications.filter(app => app.application_status === 'approved').length;
+            const rejected = applications.filter(app => app.application_status === 'rejected').length;
+            const total = applications.length;
+
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('approvedCount').textContent = approved;
+            document.getElementById('rejectedCount').textContent = rejected;
+            document.getElementById('totalCount').textContent = total;
+        }
+
+        // Mudar aba
+        function showTab(tab) {
+            currentTab = tab;
+            
+            // Atualizar navegação
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('border-primary-500', 'text-primary-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            event.target.classList.remove('border-transparent', 'text-gray-500');
+            event.target.classList.add('border-primary-500', 'text-primary-600');
+
+            // Atualizar título
+            const titles = {
+                pending: 'Candidaturas Pendentes',
+                approved: 'Candidaturas Aprovadas',
+                rejected: 'Candidaturas Rejeitadas'
+            };
+            document.getElementById('tabTitle').textContent = titles[tab];
+
+            displayApplications();
+        }
+
+        // Ver detalhes da candidatura
+        function viewDetails(applicationId) {
+            const app = applications.find(a => a.id === applicationId);
+            if (!app) return;
+
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-2">Dados Pessoais</h4>
+                            <p><strong>Nome:</strong> ${app.full_name}</p>
+                            <p><strong>CPF:</strong> ${app.cpf}</p>
+                            <p><strong>RG:</strong> ${app.rg}</p>
+                            <p><strong>Email:</strong> ${app.email}</p>
+                            <p><strong>Telefone:</strong> ${app.phone}</p>
+                            <p><strong>Endereço:</strong> ${app.address}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-2">Dados Profissionais</h4>
+                            <p><strong>CRM:</strong> ${app.crm}/${app.crm_state}</p>
+                            <p><strong>Status CRM:</strong> ${app.crm_status}</p>
+                            <p><strong>Faculdade:</strong> ${app.medical_school}</p>
+                            <p><strong>Ano de Formação:</strong> ${app.graduation_year}</p>
+                            <p><strong>Experiência:</strong> ${app.experience_years}</p>
+                            <p><strong>Especialidades:</strong> ${Array.isArray(app.specialties) ? app.specialties.join(', ') : 'N/A'}</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Dados Financeiros</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <p><strong>Banco:</strong> ${app.bank}</p>
+                            <p><strong>Agência:</strong> ${app.agency}</p>
+                            <p><strong>Conta:</strong> ${app.account}</p>
+                            <p><strong>PIX:</strong> ${app.pix_key}</p>
+                            <p><strong>Situação Fiscal:</strong> ${app.tax_status}</p>
+                            <p><strong>Preço Consulta Normal:</strong> R$ ${app.normal_consultation_price}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Status da Candidatura</h4>
+                        <p><strong>Status:</strong> <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(app.application_status)}">${getStatusText(app.application_status)}</span></p>
+                        <p><strong>Enviado em:</strong> ${new Date(app.submitted_at).toLocaleString('pt-BR')}</p>
+                        ${app.reviewed_at ? `<p><strong>Revisado em:</strong> ${new Date(app.reviewed_at).toLocaleString('pt-BR')}</p>` : ''}
+                        ${app.rejection_reason ? `<p><strong>Motivo da Rejeição:</strong> ${app.rejection_reason}</p>` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detailsModal').classList.remove('hidden');
+        }
+
+        // Fechar modal
+        function closeModal() {
+            document.getElementById('detailsModal').classList.add('hidden');
+        }
+
+        // Aprovar candidatura
+        async function approveApplication(applicationId) {
+            if (!confirm('Tem certeza que deseja aprovar esta candidatura?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('doctors_applications')
+                    .update({
+                        application_status: 'approved',
+                        reviewed_at: new Date().toISOString(),
+                        approved_at: new Date().toISOString()
+                    })
+                    .eq('id', applicationId);
+
+                if (error) {
+                    alert('Erro ao aprovar candidatura: ' + error.message);
+                    return;
+                }
+
+                // Enviar notificação de aprovação
+                const app = applications.find(a => a.id === applicationId);
+                if (app) {
+                    try {
+                        const notificationScript = document.createElement('script');
+                        notificationScript.src = 'js/doctor-notifications.js';
+                        document.head.appendChild(notificationScript);
+                        
+                        notificationScript.onload = async () => {
+                            const notifications = new DoctorNotificationSystem();
+                            await notifications.sendApplicationApproved(app);
+                        };
+                    } catch (notificationError) {
+                        console.error('Erro ao enviar notificação:', notificationError);
+                    }
+                }
+
+                alert('Candidatura aprovada com sucesso!');
+                await loadApplications();
+            } catch (error) {
+                console.error('Erro ao aprovar:', error);
+                alert('Erro interno. Tente novamente.');
+            }
+        }
+
+        // Rejeitar candidatura
+        async function rejectApplication(applicationId) {
+            const reason = prompt('Motivo da rejeição (opcional):');
+            if (reason === null) return; // Cancelou
+
+            try {
+                const { error } = await supabase
+                    .from('doctors_applications')
+                    .update({
+                        application_status: 'rejected',
+                        reviewed_at: new Date().toISOString(),
+                        rejection_reason: reason || 'Não especificado'
+                    })
+                    .eq('id', applicationId);
+
+                if (error) {
+                    alert('Erro ao rejeitar candidatura: ' + error.message);
+                    return;
+                }
+
+                // Enviar notificação de rejeição
+                const app = applications.find(a => a.id === applicationId);
+                if (app) {
+                    try {
+                        const notificationScript = document.createElement('script');
+                        notificationScript.src = 'js/doctor-notifications.js';
+                        document.head.appendChild(notificationScript);
+                        
+                        notificationScript.onload = async () => {
+                            const notifications = new DoctorNotificationSystem();
+                            await notifications.sendApplicationRejected(app, reason);
+                        };
+                    } catch (notificationError) {
+                        console.error('Erro ao enviar notificação:', notificationError);
+                    }
+                }
+
+                alert('Candidatura rejeitada.');
+                await loadApplications();
+            } catch (error) {
+                console.error('Erro ao rejeitar:', error);
+                alert('Erro interno. Tente novamente.');
+            }
+        }
+
+        // Funções auxiliares
+        function getStatusColor(status) {
+            switch (status) {
+                case 'pending': return 'bg-yellow-100 text-yellow-800';
+                case 'approved': return 'bg-green-100 text-green-800';
+                case 'rejected': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'pending': return 'Pendente';
+                case 'approved': return 'Aprovado';
+                case 'rejected': return 'Rejeitado';
+                default: return 'Desconhecido';
+            }
+        }
+    </script>
+</body>
+</html>

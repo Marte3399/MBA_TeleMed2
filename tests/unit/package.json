@@ -1,0 +1,52 @@
+{
+  "name": "telemed-unit-tests",
+  "version": "1.0.0",
+  "description": "Testes unitários para o sistema de cadastro e aprovação de médicos - Tarefa 2",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:doctor-registration": "jest doctor-registration.test.js",
+    "test:verbose": "jest --verbose",
+    "test:silent": "jest --silent"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.0",
+    "@babel/preset-env": "^7.22.0",
+    "babel-jest": "^29.5.0",
+    "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.5.0",
+    "jsdom": "^22.1.0"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
+    ]
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/setup.js"],
+    "collectCoverage": true,
+    "coverageDirectory": "../coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "collectCoverageFrom": [
+      "../../js/**/*.js",
+      "!../../js/supabase.js",
+      "!**/node_modules/**"
+    ],
+    "testMatch": [
+      "**/*.test.js"
+    ],
+    "verbose": true,
+    "clearMocks": true,
+    "restoreMocks": true,
+    "testTimeout": 10000
+  }
+}

@@ -15,7 +15,24 @@
   - Configurar Row Level Security (RLS) para todas as tabelas
   - _Requirements: 1.1, 2.3, 3.1, 8.1, 11.1_
 
-- [ ] 2. Implementar sistema base de especialidades médicas
+- [x] 2. Implementar sistema de cadastro e aprovação de médicos
+
+
+
+
+
+
+  - Integrar formulário de cadastro médico com banco de dados Supabase
+  - Criar tabela doctors_applications para armazenar candidaturas
+  - Implementar validação de dados conforme requisitos do CFM
+  - Desenvolver sistema de upload de documentos obrigatórios
+  - Criar workflow de aprovação com verificação de CRM
+  - Implementar notificações de status da candidatura
+  - Desenvolver painel administrativo para aprovação de médicos
+  - Configurar criação automática de perfil médico após aprovação
+  - _Requirements: Conformidade legal CFM, processo de verificação_
+
+- [ ] 3. Implementar sistema base de especialidades médicas
   - Criar componente de renderização de cards de especialidades
   - Implementar sistema de busca e filtros em tempo real
   - Desenvolver modal de detalhes da especialidade com informações completas
@@ -23,7 +40,7 @@
   - Adicionar indicadores visuais de disponibilidade (médicos online)
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 3. Desenvolver sistema de agendamento de consultas
+- [ ] 4. Desenvolver sistema de agendamento de consultas
   - Criar interface de seleção de data e horário
   - Implementar validação de disponibilidade de médicos
   - Desenvolver formulário de sintomas e informações da consulta
@@ -31,7 +48,7 @@
   - Adicionar confirmação visual do agendamento
   - _Requirements: 1.5, 2.1, 8.1_
 
-- [ ] 4. Implementar sistema de pagamentos seguro
+- [ ] 5. Implementar sistema de pagamentos seguro
   - Integrar gateway de pagamento para processamento de cartões
   - Criar modal de pagamento com validação de campos obrigatórios
   - Implementar geração de ID único de consulta após pagamento
@@ -39,7 +56,7 @@
   - Adicionar confirmação de pagamento com detalhes da consulta
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 5. Criar sistema de fila de consultas em tempo real
+- [ ] 6. Criar sistema de fila de consultas em tempo real
   - Implementar entrada automática na fila após pagamento confirmado
   - Desenvolver interface de exibição de posição na fila
   - Criar sistema de atualizações em tempo real usando Supabase subscriptions
@@ -47,7 +64,7 @@
   - Adicionar notificações visuais para mudanças de posição
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 6. Desenvolver sistema de notificações multi-canal
+- [ ] 7. Desenvolver sistema de notificações multi-canal
   - Implementar notificações push do navegador
   - Integrar WhatsApp API para mensagens de confirmação
   - Criar sistema de email para confirmações e lembretes
@@ -55,7 +72,7 @@
   - Implementar alertas sonoros para chamada de consulta
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 7. Implementar interface de videoconsulta
+- [ ] 8. Implementar interface de videoconsulta
   - Integrar WebRTC/Jitsi Meet para videochamadas HD
   - Criar tela de preparação com teste de câmera/microfone
   - Desenvolver controles de áudio/vídeo durante a consulta
@@ -63,7 +80,7 @@
   - Adicionar funcionalidade de gravação de sessão (opcional)
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 8. Criar sistema de prontuários digitais
+- [ ] 9. Criar sistema de prontuários digitais
   - Desenvolver interface para médicos criarem prontuários
   - Implementar campos para diagnóstico, prescrições e recomendações
   - Criar sistema de assinatura digital autenticada
