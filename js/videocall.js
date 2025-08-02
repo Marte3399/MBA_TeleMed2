@@ -1,576 +1,570 @@
-// TeleMed - Sistema de Videochamadas
+// Sistema de Videochamada com Jitsi Meet
+// Integração completa para consultas médicas
 
-/**
- * CONFIGURAÇÃO DE VIDEOCHAMADAS
- * Define parâmetros para integração com Jitsi Meet e comportamento das videochamadas
- */
-const VIDEO_CALL_CONFIG = {
-    jitsiDomain: 'meet.jit.si',     // Domínio do servidor Jitsi Meet
-    roomPrefix: 'telemed-',         // Prefixo para nomes das salas de videochamada
-    defaultOptions: {               // Opções padrão para inicialização do Jitsi
-        width: '100%',              // Largura do player de vídeo
-        height: '400px',            // Altura do player de vídeo
-        parentNode: null,           // Elemento DOM pai (será definido dinamicamente)
-        configOverwrite: {          // Configurações de comportamento
-            startWithAudioMuted: false,         // Iniciar com áudio ligado
-            startWithVideoMuted: false,         // Iniciar com vídeo ligado
-            enableWelcomePage: false,           // Desabilitar página de boas-vindas
-            enableClosePage: false,             // Desabilitar página de encerramento
-            disableDeepLinking: true,           // Desabilitar deep linking
-            toolbarButtons: [                   // Botões disponíveis na barra de ferramentas
-                'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
-                'fodeviceselection', 'hangup', 'profile', 'recording',
-                'settings', 'videoquality', 'filmstrip', 'invite',
-                'feedback', 'stats', 'shortcuts', 'tileview', 'chat'
-            ],
-        },
-        interfaceConfigOverwrite: {     // Configurações de interface personalizada
-            SHOW_JITSI_WATERMARK: false,               // Ocultar marca d'água do Jitsi
-            SHOW_WATERMARK_FOR_GUESTS: false,          // Ocultar marca d'água para convidados
-            SHOW_BRAND_WATERMARK: false,               // Ocultar marca d'água da marca
-            BRAND_WATERMARK_LINK: '',                  // Link da marca d'água (vazio)
-            SHOW_POWERED_BY: false,                    // Ocultar "Powered by Jitsi"
-            TOOLBAR_ALWAYS_VISIBLE: false,             // Barra de ferramentas auto-ocultar
-            DEFAULT_WELCOME_PAGE_LOGO_URL: '',         // Logo personalizado (vazio)
-            JITSI_WATERMARK_LINK: '',                  // Link da marca d'água Jitsi (vazio)
-            DISPLAY_WELCOME_PAGE_CONTENT: false,       // Não exibir conteúdo da página inicial
-            DISPLAY_WELCOME_PAGE_TOOLBAR_ADDITIONAL_CONTENT: false, // Sem conteúdo adicional
-            HIDE_INVITE_MORE_HEADER: true,             // Ocultar cabeçalho de convites
-            MOBILE_APP_PROMO: false,                   // Desabilitar promoção do app mobile
-            RECENT_LIST_ENABLED: false,                // Desabilitar lista de recentes
-            SETTINGS_SECTIONS: ['devices', 'language', 'moderator', 'profile', 'calendar'], // Seções de configuração
-            TOOLBAR_BUTTONS: [                         // Botões da barra de ferramentas
-                'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
-                'fodeviceselection', 'hangup', 'profile', 'recording',
-                'settings', 'videoquality', 'filmstrip', 'invite',
-                'feedback', 'stats', 'shortcuts', 'tileview', 'chat'
-            ],
-            VIDEO_LAYOUT_FIT: 'nocrop',                // Layout do vídeo sem corte
-            filmStripOnly: false,                      // Não apenas filmstrip
-            VERTICAL_FILMSTRIP: true,                  // Filmstrip vertical
+class VideoCallSystem {
+    constructor() {
+        this.jitsiConfig = {
+            appId: 'vpaas-magic-cookie-d4eb95e56d4140978d223283225476be',
+            apiKey: 'vpaas-magic-cookie-d4eb95e56d4140978d223283225476be/feda42'
+        };
+        this.currentCall = null;
+        this.jitsiAPI = null;
+        this.consultationData = null;
+        this.init();
+    }
+
+    init() {
+        this.loadJitsiScript();
+        console.log('📹 Sistema de Videochamada inicializado');
+    }
+
+    // Carregar script do Jitsi Meet
+    loadJitsiScript() {
+        if (window.JitsiMeetExternalAPI) {
+            console.log('✅ Jitsi Meet já carregado');
+            return;
         }
+
+        const script = document.createElement('script');
+        script.src = 'https://8x8.vc/external_api.js';
+        script.onload = () => {
+            console.log('✅ Jitsi Meet carregado');
+        };
+        script.onerror = () => {
+            console.error('❌ Erro ao carregar Jitsi Meet');
+        };
+        document.head.appendChild(script);
     }
-};
 
-/**
- * ESTADO DAS VIDEOCHAMADAS
- * Armazena todas as informações do estado atual da videochamada
- */
-let videoCallState = {
-    isActive: false,            // Se há uma videochamada ativa no momento
-    isVideoEnabled: true,       // Se o vídeo do usuário está ligado
-    isAudioEnabled: true,       // Se o áudio do usuário está ligado
-    isRecording: false,         // Se a chamada está sendo gravada
-    isScreenSharing: false,     // Se o compartilhamento de tela está ativo
-    startTime: null,            // Horário de início da chamada
-    duration: 0,                // Duração atual da chamada em segundos
-    jitsiApi: null,             // Referência para a API do Jitsi Meet
-    roomName: null,             // Nome da sala de videochamada
-    participants: [],           // Lista de participantes na chamada
-    durationInterval: null      // Timer para atualizar duração da chamada
-};
+    // Iniciar videochamada (para médicos)
+    async startVideoCall(appointmentId, doctorData) {
+        try {
+            console.log('🩺 Médico iniciando videochamada...');
 
-/**
- * INICIALIZAR SISTEMA DE VIDEOCHAMADAS
- * Configura e inicializa todos os componentes do sistema de videochamadas
- */
-function initializeVideoCall() {
-    console.log('🎥 Video call system initialized');
-}
-
-/**
- * ABRIR VIDEOCHAMADA
- * Inicia uma nova videochamada, criando sala e interface necessária
- * @param {number} appointmentId - ID da consulta (opcional, para vincular à consulta específica)
- */
-function openVideoCall(appointmentId = null) {
-    // Verifica se o usuário está logado antes de permitir videochamada
-    if (!checkSession()) return;
-    
-    // Gera nome único para a sala de videochamada
-    const roomName = generateRoomName(appointmentId);
-    videoCallState.roomName = roomName;
-    
-    // Atualiza o conteúdo do modal com informações da consulta
-    updateVideoCallModal(appointmentId);
-    
-    // Exibe o modal de videochamada na tela
-    document.getElementById('videoCallModal').classList.remove('hidden');
-    
-    // Inicializa o Jitsi Meet após pequeno delay para garantir que o modal foi renderizado
-    setTimeout(() => {
-        initializeJitsiMeet(roomName);
-    }, 500);
-}
-
-/**
- * GERAR NOME DA SALA
- * Cria um nome único para a sala de videochamada baseado no ID da consulta
- * @param {number} appointmentId - ID da consulta (opcional)
- * @returns {string} Nome único da sala com prefixo da plataforma
- */
-function generateRoomName(appointmentId) {
-    const baseId = appointmentId || Date.now(); // Usa ID da consulta ou timestamp atual
-    return `${VIDEO_CALL_CONFIG.roomPrefix}${baseId}`;
-}
-
-/**
- * ATUALIZAR MODAL DE VIDEOCHAMADA
- * Atualiza o conteúdo do modal com informações da consulta e controles de vídeo
- * @param {number} appointmentId - ID da consulta para buscar informações específicas
- */
-function updateVideoCallModal(appointmentId) {
-    const modal = document.getElementById('videoCallModal');
-    const modalContent = modal.querySelector('.modal-body');
-    
-    // Busca detalhes da consulta se ID foi fornecido
-    let appointmentInfo = '';
-    if (appointmentId && TeleMed.appointments) {
-        const appointment = TeleMed.appointments.find(apt => apt.id === appointmentId);
-        if (appointment) {
-            // Cria seção com informações da consulta
-            appointmentInfo = `
-                <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-                    <div class="text-sm font-medium text-blue-900">
-                        Consulta: ${appointment.specialty} - ${appointment.doctor}
-                    </div>
-                    <div class="text-xs text-blue-700">
-                        ${formatDate(appointment.date)} às ${appointment.time}
-                    </div>
-                </div>
-            `;
-        }
-    }
-    
-    modalContent.innerHTML = `
-        ${appointmentInfo}
-        <div class="bg-gray-900 rounded-lg mb-4 relative" style="height: 400px;">
-            <div id="jitsiContainer" class="w-full h-full rounded-lg"></div>
-            <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
-                <button onclick="toggleVideo()" id="videoBtn" 
-                        class="video-btn bg-white bg-opacity-20 text-white p-3 rounded-full hover:bg-opacity-30 transition">
-                    🎥
-                </button>
-                <button onclick="toggleAudio()" id="audioBtn" 
-                        class="video-btn bg-white bg-opacity-20 text-white p-3 rounded-full hover:bg-opacity-30 transition">
-                    🎤
-                </button>
-                <button onclick="toggleScreenShare()" id="screenBtn" 
-                        class="video-btn bg-white bg-opacity-20 text-white p-3 rounded-full hover:bg-opacity-30 transition">
-                    🖥️
-                </button>
-                <button onclick="toggleRecording()" id="recordBtn" 
-                        class="video-btn bg-white bg-opacity-20 text-white p-3 rounded-full hover:bg-opacity-30 transition">
-                    📹
-                </button>
-                <button onclick="endCall()" id="endCallBtn" 
-                        class="video-btn bg-red-600 text-white p-3 rounded-full hover:bg-red-700 transition">
-                    📞
-                </button>
-            </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-gray-50 rounded-lg p-4">
-                <h4 class="font-bold text-gray-900 mb-2">📊 Informações da Chamada</h4>
-                <div class="text-sm text-gray-600 space-y-1">
-                    <div>• Duração: <span id="callDuration">00:00</span></div>
-                    <div>• Qualidade: <span id="callQuality">HD</span></div>
-                    <div>• Participantes: <span id="participantCount">1</span></div>
-                    <div>• Gravação: <span id="recordingStatus">Inativa</span></div>
-                </div>
-            </div>
-            
-            <div class="bg-blue-50 rounded-lg p-4">
-                <h4 class="font-bold text-blue-900 mb-2">🔧 Controles</h4>
-                <div class="space-y-2">
-                    <button onclick="openChatInCall()" 
-                            class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm">
-                        💬 Abrir Chat
-                    </button>
-                    <button onclick="shareScreen()" 
-                            class="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 text-sm">
-                        📱 Compartilhar Tela
-                    </button>
-                    <button onclick="openPrescriptionInCall()" 
-                            class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 text-sm">
-                        💊 Prescrever
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// Initialize Jitsi Meet
-function initializeJitsiMeet(roomName) {
-    const container = document.getElementById('jitsiContainer');
-    if (!container) return;
-    
-    // Clear container
-    container.innerHTML = '';
-    
-    // Check if Jitsi Meet API is available
-    if (typeof JitsiMeetExternalAPI === 'undefined') {
-        showJitsiMeetFallback();
-        return;
-    }
-    
-    try {
-        // Create Jitsi Meet instance
-        const options = {
-            ...VIDEO_CALL_CONFIG.defaultOptions,
-            roomName: roomName,
-            parentNode: container,
-            userInfo: {
-                displayName: TeleMed.currentUser.name,
-                email: TeleMed.currentUser.email
+            // Buscar dados da consulta
+            const appointmentData = await this.getAppointmentData(appointmentId);
+            if (!appointmentData) {
+                throw new Error('Consulta não encontrada');
             }
-        };
-        
-        videoCallState.jitsiApi = new JitsiMeetExternalAPI(VIDEO_CALL_CONFIG.jitsiDomain, options);
-        
-        // Set up event listeners
-        setupJitsiEventListeners();
-        
-        // Start call tracking
-        startCallTracking();
-        
-        console.log('🎥 Jitsi Meet initialized for room:', roomName);
-        
-    } catch (error) {
-        console.error('Error initializing Jitsi Meet:', error);
-        showJitsiMeetFallback();
-    }
-}
 
-// Setup Jitsi Event Listeners
-function setupJitsiEventListeners() {
-    const api = videoCallState.jitsiApi;
-    if (!api) return;
-    
-    // Video conference joined
-    api.addEventListener('videoConferenceJoined', (event) => {
-        console.log('📹 Video conference joined:', event);
-        videoCallState.isActive = true;
-        showNotification('Conectado!', 'Videochamada iniciada com sucesso', 'success');
-        updateCallStatus('connected');
-    });
-    
-    // Video conference left
-    api.addEventListener('videoConferenceLeft', (event) => {
-        console.log('📹 Video conference left:', event);
-        endCall();
-    });
-    
-    // Participant joined
-    api.addEventListener('participantJoined', (event) => {
-        console.log('👥 Participant joined:', event);
-        videoCallState.participants.push(event);
-        updateParticipantCount();
-        showNotification('Participante conectado', `${event.displayName} entrou na chamada`, 'info');
-    });
-    
-    // Participant left
-    api.addEventListener('participantLeft', (event) => {
-        console.log('👥 Participant left:', event);
-        videoCallState.participants = videoCallState.participants.filter(p => p.id !== event.id);
-        updateParticipantCount();
-        showNotification('Participante saiu', `${event.displayName} saiu da chamada`, 'info');
-    });
-    
-    // Audio availability changed
-    api.addEventListener('audioAvailabilityChanged', (event) => {
-        console.log('🎤 Audio availability changed:', event);
-        videoCallState.isAudioEnabled = event.available;
-        updateAudioButton();
-    });
-    
-    // Video availability changed
-    api.addEventListener('videoAvailabilityChanged', (event) => {
-        console.log('🎥 Video availability changed:', event);
-        videoCallState.isVideoEnabled = event.available;
-        updateVideoButton();
-    });
-    
-    // Recording status changed
-    api.addEventListener('recordingStatusChanged', (event) => {
-        console.log('📹 Recording status changed:', event);
-        videoCallState.isRecording = event.on;
-        updateRecordingStatus();
-    });
-    
-    // Screen sharing status changed
-    api.addEventListener('screenSharingStatusChanged', (event) => {
-        console.log('🖥️ Screen sharing status changed:', event);
-        videoCallState.isScreenSharing = event.on;
-        updateScreenShareButton();
-    });
-    
-    // Error occurred
-    api.addEventListener('errorOccurred', (event) => {
-        console.error('❌ Jitsi Meet error:', event);
-        showNotification('Erro na videochamada', 'Ocorreu um erro na conexão', 'error');
-    });
-}
+            this.consultationData = appointmentData;
 
-// Show Jitsi Meet Fallback
-function showJitsiMeetFallback() {
-    const container = document.getElementById('jitsiContainer');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="flex items-center justify-center h-full bg-gray-900 text-white">
-            <div class="text-center">
-                <div class="text-6xl mb-4">🎥</div>
-                <div class="text-2xl font-bold mb-2">Videochamada Simulada</div>
-                <div class="text-gray-300 mb-4">Dr. Roberto Santos - Cardiologia</div>
-                <div class="text-gray-400 text-sm">
-                    Demo: Sistema de videochamada integrado com Jitsi Meet
-                </div>
-                <div class="mt-6 space-y-2">
-                    <div class="text-sm text-gray-300">🔴 Gravação ativa</div>
-                    <div class="text-sm text-gray-300">🎤 Áudio ativo</div>
-                    <div class="text-sm text-gray-300">📹 Vídeo ativo</div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Start simulated call tracking
-    startCallTracking();
-}
+            // Gerar sala única
+            const roomName = `consultation-${appointmentId}`;
+            
+            // Criar link da videochamada
+            const videoCallLink = await this.generateVideoCallLink(roomName, doctorData);
 
-// Start Call Tracking
-function startCallTracking() {
-    videoCallState.startTime = new Date();
-    videoCallState.duration = 0;
-    
-    // Update duration every second
-    videoCallState.durationInterval = setInterval(() => {
-        videoCallState.duration++;
-        updateCallDuration();
-    }, 1000);
-    
-    // Update call status
-    updateCallStatus('active');
-}
+            // Notificar paciente
+            await this.notifyPatient(appointmentData.patient_id, videoCallLink, doctorData);
 
-// Update Call Duration
-function updateCallDuration() {
-    const durationEl = document.getElementById('callDuration');
-    if (durationEl) {
-        const minutes = Math.floor(videoCallState.duration / 60);
-        const seconds = videoCallState.duration % 60;
-        durationEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-}
+            // Abrir videochamada para o médico
+            await this.joinVideoCall(roomName, 'doctor', doctorData);
 
-// Update Call Status
-function updateCallStatus(status) {
-    const qualityEl = document.getElementById('callQuality');
-    if (qualityEl) {
-        const qualities = {
-            'connecting': 'Conectando...',
-            'connected': 'HD',
-            'active': 'HD 720p',
-            'poor': 'Baixa qualidade',
-            'disconnected': 'Desconectado'
-        };
-        qualityEl.textContent = qualities[status] || 'Desconhecido';
-    }
-}
+            console.log('✅ Videochamada iniciada pelo médico');
 
-// Update Participant Count
-function updateParticipantCount() {
-    const countEl = document.getElementById('participantCount');
-    if (countEl) {
-        countEl.textContent = videoCallState.participants.length + 1; // +1 for current user
-    }
-}
-
-// Video Control Functions
-function toggleVideo() {
-    if (videoCallState.jitsiApi) {
-        if (videoCallState.isVideoEnabled) {
-            videoCallState.jitsiApi.executeCommand('video', 'off');
-        } else {
-            videoCallState.jitsiApi.executeCommand('video', 'on');
+        } catch (error) {
+            console.error('❌ Erro ao iniciar videochamada:', error);
+            throw error;
         }
-    } else {
-        // Fallback for demo
-        videoCallState.isVideoEnabled = !videoCallState.isVideoEnabled;
-        updateVideoButton();
-        showNotification('Vídeo ' + (videoCallState.isVideoEnabled ? 'ativado' : 'desativado'), '', 'info');
     }
-}
 
-function toggleAudio() {
-    if (videoCallState.jitsiApi) {
-        if (videoCallState.isAudioEnabled) {
-            videoCallState.jitsiApi.executeCommand('audio', 'off');
-        } else {
-            videoCallState.jitsiApi.executeCommand('audio', 'on');
+    // Entrar na videochamada (para pacientes)
+    async joinVideoCall(roomName, userType = 'patient', userData = null) {
+        try {
+            if (!window.JitsiMeetExternalAPI) {
+                throw new Error('Jitsi Meet não está carregado');
+            }
+
+            console.log(`📹 ${userType} entrando na videochamada...`);
+
+            // Configurações específicas por tipo de usuário
+            const userConfig = this.getUserConfig(userType, userData);
+
+            // Configurações do Jitsi
+            const jitsiOptions = {
+                roomName: roomName,
+                width: '100%',
+                height: '100%',
+                parentNode: this.createVideoContainer(),
+                configOverwrite: {
+                    startWithAudioMuted: userType === 'patient',
+                    startWithVideoMuted: false,
+                    enableWelcomePage: false,
+                    prejoinPageEnabled: true,
+                    disableModeratorIndicator: false,
+                    startScreenSharing: false,
+                    enableEmailInStats: false,
+                    disableThirdPartyRequests: true,
+                    disableLocalVideoFlip: false,
+                    backgroundAlpha: 0.5,
+                    enableLayerSuspension: true,
+                    p2p: {
+                        enabled: true,
+                        stunServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' }
+                        ]
+                    },
+                    analytics: {
+                        disabled: true
+                    },
+                    remoteVideoMenu: {
+                        disableKick: userType === 'patient'
+                    }
+                },
+                interfaceConfigOverwrite: {
+                    TOOLBAR_BUTTONS: this.getToolbarButtons(userType),
+                    SETTINGS_SECTIONS: ['devices', 'language', 'profile'],
+                    SHOW_JITSI_WATERMARK: false,
+                    SHOW_WATERMARK_FOR_GUESTS: false,
+                    SHOW_BRAND_WATERMARK: false,
+                    BRAND_WATERMARK_LINK: '',
+                    SHOW_POWERED_BY: false,
+                    DEFAULT_BACKGROUND: '#474747',
+                    DISABLE_VIDEO_BACKGROUND: false,
+                    INITIAL_TOOLBAR_TIMEOUT: 20000,
+                    TOOLBAR_TIMEOUT: 4000,
+                    TOOLBAR_ALWAYS_VISIBLE: false,
+                    DEFAULT_REMOTE_DISPLAY_NAME: userType === 'patient' ? 'Médico' : 'Paciente',
+                    DEFAULT_LOCAL_DISPLAY_NAME: userConfig.displayName,
+                    MOBILE_APP_PROMO: false,
+                    NATIVE_APP_NAME: 'TeleMed',
+                    PROVIDER_NAME: 'TeleMed',
+                    LANG_DETECTION: true,
+                    CONNECTION_INDICATOR_AUTO_HIDE_ENABLED: true,
+                    CONNECTION_INDICATOR_AUTO_HIDE_TIMEOUT: 5000,
+                    CONNECTION_INDICATOR_DISABLED: false,
+                    VIDEO_LAYOUT_FIT: 'both',
+                    filmStripOnly: false,
+                    VERTICAL_FILMSTRIP: true
+                },
+                userInfo: {
+                    displayName: userConfig.displayName,
+                    email: userConfig.email || ''
+                }
+            };
+
+            // Inicializar Jitsi Meet
+            this.jitsiAPI = new JitsiMeetExternalAPI('8x8.vc', jitsiOptions);
+
+            // Configurar event listeners
+            this.setupJitsiEventListeners(userType);
+
+            // Salvar dados da chamada atual
+            this.currentCall = {
+                roomName: roomName,
+                userType: userType,
+                startTime: new Date(),
+                appointmentId: this.consultationData?.id
+            };
+
+            console.log('✅ Videochamada iniciada');
+
+        } catch (error) {
+            console.error('❌ Erro ao entrar na videochamada:', error);
+            throw error;
         }
-    } else {
-        // Fallback for demo
-        videoCallState.isAudioEnabled = !videoCallState.isAudioEnabled;
-        updateAudioButton();
-        showNotification('Áudio ' + (videoCallState.isAudioEnabled ? 'ativado' : 'desativado'), '', 'info');
     }
-}
 
-function toggleScreenShare() {
-    if (videoCallState.jitsiApi) {
-        videoCallState.jitsiApi.executeCommand('toggleShareScreen');
-    } else {
-        // Fallback for demo
-        videoCallState.isScreenSharing = !videoCallState.isScreenSharing;
-        updateScreenShareButton();
-        showNotification('Compartilhamento ' + (videoCallState.isScreenSharing ? 'iniciado' : 'parado'), '', 'info');
-    }
-}
-
-function toggleRecording() {
-    if (videoCallState.jitsiApi) {
-        if (videoCallState.isRecording) {
-            videoCallState.jitsiApi.executeCommand('stopRecording');
-        } else {
-            videoCallState.jitsiApi.executeCommand('startRecording');
+    // Criar container para vídeo
+    createVideoContainer() {
+        // Remover container existente se houver
+        const existingContainer = document.getElementById('jitsi-container');
+        if (existingContainer) {
+            existingContainer.remove();
         }
-    } else {
-        // Fallback for demo
-        videoCallState.isRecording = !videoCallState.isRecording;
-        updateRecordingStatus();
-        showNotification('Gravação ' + (videoCallState.isRecording ? 'iniciada' : 'parada'), '', 'info');
+
+        const container = document.createElement('div');
+        container.id = 'jitsi-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background: #000;
+        `;
+
+        document.body.appendChild(container);
+        return container;
+    }
+
+    // Configurações por tipo de usuário
+    getUserConfig(userType, userData) {
+        if (userType === 'doctor') {
+            return {
+                displayName: userData?.name || 'Dr. Médico',
+                email: userData?.email || '',
+                isModerator: true
+            };
+        } else {
+            return {
+                displayName: 'Paciente',
+                email: '',
+                isModerator: false
+            };
+        }
+    }
+
+    // Botões da toolbar por tipo de usuário
+    getToolbarButtons(userType) {
+        const commonButtons = [
+            'microphone', 'camera', 'hangup', 'chat', 
+            'settings', 'fullscreen', 'fodeviceselection'
+        ];
+
+        if (userType === 'doctor') {
+            return [
+                ...commonButtons,
+                'desktop', 'recording', 'raisehand', 'videoquality',
+                'filmstrip', 'stats', 'shortcuts', 'tileview'
+            ];
+        } else {
+            return [
+                ...commonButtons,
+                'raisehand', 'tileview'
+            ];
+        }
+    }
+
+    // Configurar event listeners do Jitsi
+    setupJitsiEventListeners(userType) {
+        if (!this.jitsiAPI) return;
+
+        // Usuário entrou na conferência
+        this.jitsiAPI.addEventListener('videoConferenceJoined', (data) => {
+            console.log('✅ Entrou na videochamada:', data);
+            this.onConferenceJoined(userType);
+        });
+
+        // Usuário saiu da conferência
+        this.jitsiAPI.addEventListener('videoConferenceLeft', (data) => {
+            console.log('👋 Saiu da videochamada:', data);
+            this.onConferenceLeft(userType);
+        });
+
+        // Participante entrou
+        this.jitsiAPI.addEventListener('participantJoined', (data) => {
+            console.log('👤 Participante entrou:', data);
+            this.onParticipantJoined(data);
+        });
+
+        // Participante saiu
+        this.jitsiAPI.addEventListener('participantLeft', (data) => {
+            console.log('👤 Participante saiu:', data);
+            this.onParticipantLeft(data);
+        });
+
+        // Erro na conferência
+        this.jitsiAPI.addEventListener('videoConferenceError', (error) => {
+            console.error('❌ Erro na videochamada:', error);
+            this.onConferenceError(error);
+        });
+
+        // Mudança de status de áudio
+        this.jitsiAPI.addEventListener('audioMuteStatusChanged', (data) => {
+            console.log('🔊 Status de áudio mudou:', data);
+        });
+
+        // Mudança de status de vídeo
+        this.jitsiAPI.addEventListener('videoMuteStatusChanged', (data) => {
+            console.log('📹 Status de vídeo mudou:', data);
+        });
+    }
+
+    // Quando usuário entra na conferência
+    async onConferenceJoined(userType) {
+        try {
+            // Atualizar status da consulta
+            if (this.consultationData) {
+                await this.updateAppointmentStatus('in_progress');
+            }
+
+            // Registrar início da sessão
+            await this.logSessionStart(userType);
+
+            // Mostrar controles customizados se necessário
+            this.showCustomControls(userType);
+
+        } catch (error) {
+            console.error('❌ Erro ao processar entrada na conferência:', error);
+        }
+    }
+
+    // Quando usuário sai da conferência
+    async onConferenceLeft(userType) {
+        try {
+            // Calcular duração da chamada
+            const duration = this.currentCall ? 
+                Math.round((new Date() - this.currentCall.startTime) / 1000 / 60) : 0;
+
+            // Registrar fim da sessão
+            await this.logSessionEnd(userType, duration);
+
+            // Limpar container
+            const container = document.getElementById('jitsi-container');
+            if (container) {
+                container.remove();
+            }
+
+            // Resetar API
+            this.jitsiAPI = null;
+            this.currentCall = null;
+
+            // Ações específicas por tipo de usuário
+            if (userType === 'doctor') {
+                this.onDoctorLeft();
+            } else {
+                this.onPatientLeft();
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao processar saída da conferência:', error);
+        }
+    }
+
+    // Quando participante entra
+    onParticipantJoined(data) {
+        // Notificar que alguém entrou
+        this.showNotification(`${data.displayName || 'Participante'} entrou na consulta`, 'success');
+    }
+
+    // Quando participante sai
+    onParticipantLeft(data) {
+        // Notificar que alguém saiu
+        this.showNotification(`${data.displayName || 'Participante'} saiu da consulta`, 'info');
+    }
+
+    // Erro na conferência
+    onConferenceError(error) {
+        this.showNotification('Erro na videochamada. Tentando reconectar...', 'error');
+        
+        // Tentar reconectar após 3 segundos
+        setTimeout(() => {
+            if (this.currentCall) {
+                this.rejoinCall();
+            }
+        }, 3000);
+    }
+
+    // Tentar reconectar
+    async rejoinCall() {
+        try {
+            if (this.currentCall) {
+                await this.joinVideoCall(
+                    this.currentCall.roomName, 
+                    this.currentCall.userType
+                );
+            }
+        } catch (error) {
+            console.error('❌ Erro ao reconectar:', error);
+        }
+    }
+
+    // Gerar link da videochamada
+    async generateVideoCallLink(roomName, doctorData) {
+        // Em produção, isso seria feito no backend com JWT
+        const baseUrl = window.location.origin;
+        return `${baseUrl}/videocall.html?room=${roomName}&doctor=${doctorData.id}`;
+    }
+
+    // Notificar paciente
+    async notifyPatient(patientId, videoCallLink, doctorData) {
+        try {
+            const notification = {
+                user_id: patientId,
+                type: 'consultation_ready',
+                title: 'Sua consulta está pronta!',
+                message: `Dr. ${doctorData.name} está aguardando você na sala de consulta.`,
+                channels: ['browser', 'whatsapp'],
+                data: {
+                    videoCallLink: videoCallLink,
+                    doctorName: doctorData.name,
+                    specialty: doctorData.specialty
+                }
+            };
+
+            const { error } = await supabase
+                .from('notifications')
+                .insert([notification]);
+
+            if (error) throw error;
+
+            console.log('✅ Paciente notificado');
+
+        } catch (error) {
+            console.error('❌ Erro ao notificar paciente:', error);
+        }
+    }
+
+    // Buscar dados da consulta
+    async getAppointmentData(appointmentId) {
+        try {
+            const { data, error } = await supabase
+                .from('appointments')
+                .select(`
+                    *,
+                    specialties (name),
+                    profiles!appointments_patient_id_fkey (full_name, email)
+                `)
+                .eq('id', appointmentId)
+                .single();
+
+            if (error) throw error;
+            return data;
+
+        } catch (error) {
+            console.error('❌ Erro ao buscar consulta:', error);
+            return null;
+        }
+    }
+
+    // Atualizar status da consulta
+    async updateAppointmentStatus(status) {
+        if (!this.consultationData) return;
+
+        try {
+            const { error } = await supabase
+                .from('appointments')
+                .update({ 
+                    status: status, 
+                    updated_at: new Date().toISOString() 
+                })
+                .eq('id', this.consultationData.id);
+
+            if (error) throw error;
+            console.log('✅ Status da consulta atualizado:', status);
+
+        } catch (error) {
+            console.error('❌ Erro ao atualizar status:', error);
+        }
+    }
+
+    // Registrar início da sessão
+    async logSessionStart(userType) {
+        try {
+            const sessionData = {
+                appointment_id: this.consultationData?.id,
+                user_type: userType,
+                action: 'joined',
+                timestamp: new Date().toISOString(),
+                metadata: {
+                    roomName: this.currentCall?.roomName,
+                    userAgent: navigator.userAgent
+                }
+            };
+
+            // Salvar no banco (implementar tabela session_logs se necessário)
+            console.log('📝 Sessão iniciada:', sessionData);
+
+        } catch (error) {
+            console.error('❌ Erro ao registrar início da sessão:', error);
+        }
+    }
+
+    // Registrar fim da sessão
+    async logSessionEnd(userType, duration) {
+        try {
+            const sessionData = {
+                appointment_id: this.consultationData?.id,
+                user_type: userType,
+                action: 'left',
+                duration: duration,
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('📝 Sessão finalizada:', sessionData);
+
+            // Atualizar duração na consulta
+            if (this.consultationData && userType === 'doctor') {
+                await supabase
+                    .from('appointments')
+                    .update({ 
+                        actual_duration: duration,
+                        status: 'completed'
+                    })
+                    .eq('id', this.consultationData.id);
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao registrar fim da sessão:', error);
+        }
+    }
+
+    // Mostrar controles customizados
+    showCustomControls(userType) {
+        if (userType === 'doctor') {
+            // Adicionar botões específicos para médicos
+            this.addDoctorControls();
+        }
+    }
+
+    // Adicionar controles para médicos
+    addDoctorControls() {
+        // Implementar controles específicos como:
+        // - Botão para criar prontuário
+        // - Botão para prescrever medicamentos
+        // - Botão para agendar retorno
+        console.log('🩺 Controles de médico adicionados');
+    }
+
+    // Quando médico sai
+    onDoctorLeft() {
+        // Finalizar consulta e mostrar opções de prontuário
+        console.log('🩺 Médico saiu - finalizando consulta');
+    }
+
+    // Quando paciente sai
+    onPatientLeft() {
+        // Mostrar modal de avaliação
+        console.log('👤 Paciente saiu - solicitando avaliação');
+        this.showFeedbackModal();
+    }
+
+    // Mostrar modal de avaliação
+    showFeedbackModal() {
+        // Implementar modal de feedback
+        if (window.feedbackSystem) {
+            window.feedbackSystem.showFeedbackModal(this.consultationData?.id);
+        }
+    }
+
+    // Mostrar notificação
+    showNotification(message, type = 'info') {
+        // Criar notificação visual
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            type === 'warning' ? 'bg-yellow-500 text-black' :
+            'bg-blue-500 text-white'
+        }`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Remover após 5 segundos
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
+    // Finalizar chamada
+    endCall() {
+        if (this.jitsiAPI) {
+            this.jitsiAPI.dispose();
+        }
     }
 }
 
-function shareScreen() {
-    if (videoCallState.jitsiApi) {
-        videoCallState.jitsiApi.executeCommand('toggleShareScreen');
-    } else {
-        showNotification('Compartilhamento de tela', 'Funcionalidade ativada (demo)', 'info');
-    }
-}
-
-function endCall() {
-    // Stop call tracking
-    if (videoCallState.durationInterval) {
-        clearInterval(videoCallState.durationInterval);
-        videoCallState.durationInterval = null;
-    }
-    
-    // Dispose Jitsi API
-    if (videoCallState.jitsiApi) {
-        videoCallState.jitsiApi.dispose();
-        videoCallState.jitsiApi = null;
-    }
-    
-    // Reset state
-    const callDuration = videoCallState.duration;
-    videoCallState = {
-        isActive: false,
-        isVideoEnabled: true,
-        isAudioEnabled: true,
-        isRecording: false,
-        isScreenSharing: false,
-        startTime: null,
-        duration: 0,
-        jitsiApi: null,
-        roomName: null,
-        participants: [],
-        durationInterval: null
-    };
-    
-    // Close modal
-    closeModal('videoCallModal');
-    
-    // Show call summary
-    showCallSummary(callDuration);
-    
-    console.log('📞 Call ended');
-}
-
-// Update Button States
-function updateVideoButton() {
-    const btn = document.getElementById('videoBtn');
-    if (btn) {
-        btn.className = videoCallState.isVideoEnabled 
-            ? 'video-btn bg-white bg-opacity-20 text-white p-3 rounded-full hover:bg-opacity-30 transition'
-            : 'video-btn bg-red-600 text-white p-3 rounded-full hover:bg-red-700 transition';
-    }
-}
-
-function updateAudioButton() {
-    const btn = document.getElementById('audioBtn');
-    if (btn) {
-        btn.className = videoCallState.isAudioEnabled 
-            ? 'video-btn bg-white bg-opacity-20 text-white p-3 rounded-full hover:bg-opacity-30 transition'
-            : 'video-btn bg-red-600 text-white p-3 rounded-full hover:bg-red-700 transition';
-    }
-}
-
-function updateScreenShareButton() {
-    const btn = document.getElementById('screenBtn');
-    if (btn) {
-        btn.className = videoCallState.isScreenSharing 
-            ? 'video-btn bg-green-600 text-white p-3 rounded-full hover:bg-green-700 transition'
-            : 'video-btn bg-white bg-opacity-20 text-white p-3 rounded-full hover:bg-opacity-30 transition';
-    }
-}
-
-function updateRecordingStatus() {
-    const statusEl = document.getElementById('recordingStatus');
-    if (statusEl) {
-        statusEl.textContent = videoCallState.isRecording ? 'Ativa' : 'Inativa';
-    }
-    
-    const btn = document.getElementById('recordBtn');
-    if (btn) {
-        btn.className = videoCallState.isRecording 
-            ? 'video-btn bg-red-600 text-white p-3 rounded-full hover:bg-red-700 transition'
-            : 'video-btn bg-white bg-opacity-20 text-white p-3 rounded-full hover:bg-opacity-30 transition';
-    }
-}
-
-// Additional Functions
-function openChatInCall() {
-    openChat();
-}
-
-function openPrescriptionInCall() {
-    showNotification('Prescrição', 'Abrindo sistema de prescrição médica', 'info');
-    // This would open a prescription interface
-}
-
-function showCallSummary(duration) {
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
-    const durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    
-    setTimeout(() => {
-        showNotification('Chamada encerrada', 
-            `Duração: ${durationText} • Qualidade: HD • Gravação: ${videoCallState.isRecording ? 'Sim' : 'Não'}`, 
-            'info'
-        );
-    }, 1000);
-}
-
-// Export functions
-window.openVideoCall = openVideoCall;
-window.toggleVideo = toggleVideo;
-window.toggleAudio = toggleAudio;
-window.toggleScreenShare = toggleScreenShare;
-window.toggleRecording = toggleRecording;
-window.shareScreen = shareScreen;
-window.endCall = endCall;
-window.openChatInCall = openChatInCall;
-window.openPrescriptionInCall = openPrescriptionInCall;
-
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    initializeVideoCall();
+// Inicializar sistema quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+    window.videoCallSystem = new VideoCallSystem();
 });
 
-console.log('✅ TeleMed Video Call System Loaded');
+// Exportar para uso em outros módulos
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = VideoCallSystem;
+}

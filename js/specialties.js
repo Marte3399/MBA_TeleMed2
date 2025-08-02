@@ -2,12 +2,6 @@
 
 /**
  * DADOS DAS ESPECIALIDADES MÉDICAS
- * Array com todas as especialidades disponíveis na plataforma, incluindo:
- * - Informações básicas (nome, descrição, ícone)
- * - Dados comerciais (preço, tempo de espera)
- * - Avaliações e estatísticas
- * - Lista de médicos disponíveis
- * - Recursos incluídos na consulta
  */
 const MEDICAL_SPECIALTIES = [
     {
@@ -146,215 +140,191 @@ const MEDICAL_SPECIALTIES = [
                 availability: 'online'
             }
         ]
-    },
-    {
-        id: 5,
-        name: 'Ginecologia',
-        description: 'Saúde da mulher e sistema reprodutivo',
-        icon: '👩‍⚕️',
-        price: 89.90,
-        priceFormatted: 'R$ 89,90',
-        waitTime: '~12 min',
-        doctorsOnline: 7,
-        rating: 4.8,
-        reviews: 1500,
-        reviewsFormatted: '1.5k avaliações',
-        className: 'specialty-ginecologia',
-        features: [
-            'Consulta ginecológica',
-            'Prevenção de doenças',
-            'Saúde reprodutiva',
-            'Acompanhamento pré-natal',
-            'Orientação contraceptiva'
-        ],
-        doctors: [
-            {
-                id: 6,
-                name: 'Dra. Lucia Santos',
-                crm: '67890-PR',
-                experience: '16 anos',
-                rating: 4.8,
-                consultations: 1800,
-                availability: 'online'
-            }
-        ]
-    },
-    {
-        id: 6,
-        name: 'Neurologia',
-        description: 'Sistema nervoso e transtornos neurológicos',
-        icon: '🧬',
-        price: 139.90,
-        priceFormatted: 'R$ 139,90',
-        waitTime: '~25 min',
-        doctorsOnline: 2,
-        rating: 4.6,
-        reviews: 432,
-        reviewsFormatted: '432 avaliações',
-        className: 'specialty-neurologia',
-        features: [
-            'Consulta neurológica',
-            'Avaliação de dores de cabeça',
-            'Diagnóstico de epilepsia',
-            'Tratamento de enxaqueca',
-            'Acompanhamento neurológico'
-        ],
-        doctors: [
-            {
-                id: 7,
-                name: 'Dr. André Costa',
-                crm: '78901-BA',
-                experience: '22 anos',
-                rating: 4.6,
-                consultations: 1650,
-                availability: 'busy'
-            }
-        ]
-    },
-    {
-        id: 7,
-        name: 'Ortopedia',
-        description: 'Ossos, articulações e sistema músculo-esquelético',
-        icon: '🦴',
-        price: 109.90,
-        priceFormatted: 'R$ 109,90',
-        waitTime: '~10 min',
-        doctorsOnline: 4,
-        rating: 4.5,
-        reviews: 789,
-        reviewsFormatted: '789 avaliações',
-        className: 'specialty-ortopedia',
-        features: [
-            'Consulta ortopédica',
-            'Avaliação de fraturas',
-            'Tratamento de lesões',
-            'Reabilitação física',
-            'Prevenção de lesões'
-        ],
-        doctors: [
-            {
-                id: 8,
-                name: 'Dr. Ricardo Lima',
-                crm: '89012-SC',
-                experience: '14 anos',
-                rating: 4.5,
-                consultations: 1100,
-                availability: 'online'
-            }
-        ]
-    },
-    {
-        id: 8,
-        name: 'Endocrinologia',
-        description: 'Hormônios, metabolismo e glândulas endócrinas',
-        icon: '⚗️',
-        price: 119.90,
-        priceFormatted: 'R$ 119,90',
-        waitTime: '~18 min',
-        doctorsOnline: 3,
-        rating: 4.7,
-        reviews: 567,
-        reviewsFormatted: '567 avaliações',
-        className: 'specialty-endocrinologia',
-        features: [
-            'Consulta endocrinológica',
-            'Tratamento de diabetes',
-            'Controle hormonal',
-            'Tratamento de tireoide',
-            'Acompanhamento metabólico'
-        ],
-        doctors: [
-            {
-                id: 9,
-                name: 'Dra. Fernanda Reis',
-                crm: '90123-GO',
-                experience: '11 anos',
-                rating: 4.7,
-                consultations: 890,
-                availability: 'online'
-            }
-        ]
     }
 ];
 
 /**
  * FUNÇÕES DE GERENCIAMENTO DE ESPECIALIDADES
- * Conjunto de funções para carregar, exibir e gerenciar especialidades médicas
  */
 
-/**
- * CARREGAR DADOS DAS ESPECIALIDADES
- * Carrega o array de especialidades médicas no estado global da aplicação
- */
-function loadSpecialtiesData() {
-    TeleMed.specialties = MEDICAL_SPECIALTIES;
-    console.log('📋 Specialties data loaded:', MEDICAL_SPECIALTIES.length, 'specialties');
+async function loadSpecialtiesData() {
+    // Initialize TeleMed object if it doesn't exist
+    if (typeof window.TeleMed === 'undefined') {
+        window.TeleMed = {};
+    }
+
+    try {
+        // Try to load from database first
+        const { data, error } = await supabase
+            .from('specialties')
+            .select('*')
+            .eq('is_active', true)
+            .order('name');
+
+        if (error) {
+            console.warn('⚠️ Database not available, using static data:', error.message);
+            // Fallback to static data
+            window.TeleMed.specialties = MEDICAL_SPECIALTIES;
+        } else if (data && data.length > 0) {
+            // Convert database format to frontend format
+            const dbSpecialties = data.map(spec => ({
+                id: spec.id,
+                name: spec.name,
+                description: spec.description,
+                icon: spec.icon,
+                price: parseFloat(spec.price),
+                priceFormatted: `R$ ${parseFloat(spec.price).toFixed(2).replace('.', ',')}`,
+                waitTime: spec.wait_time,
+                doctorsOnline: Math.floor(Math.random() * 8) + 1, // Simulated
+                rating: (Math.random() * 1.5 + 3.5).toFixed(1), // Random between 3.5-5.0
+                reviews: Math.floor(Math.random() * 2000) + 100,
+                reviewsFormatted: `${Math.floor(Math.random() * 2000) + 100} avaliações`,
+                className: `specialty-${spec.name.toLowerCase().replace(/\s+/g, '-')}`,
+                features: spec.features || [],
+                doctors: generateMockDoctors(spec.id) // Generate mock doctors
+            }));
+
+            window.TeleMed.specialties = dbSpecialties;
+            console.log('✅ Specialties loaded from database:', dbSpecialties.length, 'specialties');
+        } else {
+            // No data in database, use static data
+            window.TeleMed.specialties = MEDICAL_SPECIALTIES;
+            console.log('📋 Using static specialties data');
+        }
+    } catch (error) {
+        console.warn('⚠️ Error loading from database, using static data:', error);
+        window.TeleMed.specialties = MEDICAL_SPECIALTIES;
+    }
+
+    console.log('📋 Specialties data loaded:', window.TeleMed.specialties.length, 'specialties');
+}
+
+// Generate mock doctors for a specialty
+function generateMockDoctors(specialtyId) {
+    const doctorNames = [
+        'Dr. Roberto Santos', 'Dra. Ana Cardoso', 'Dr. Carlos Oliveira',
+        'Dra. Maria Fernanda', 'Dr. Paulo Mendes', 'Dra. Juliana Silva',
+        'Dr. Fernando Costa', 'Dra. Patricia Lima', 'Dr. Ricardo Alves'
+    ];
+    
+    const numDoctors = Math.floor(Math.random() * 3) + 1; // 1-3 doctors
+    const doctors = [];
+    
+    for (let i = 0; i < numDoctors; i++) {
+        const randomName = doctorNames[Math.floor(Math.random() * doctorNames.length)];
+        const states = ['SP', 'RJ', 'MG', 'RS', 'PR'];
+        const randomState = states[Math.floor(Math.random() * states.length)];
+        
+        doctors.push({
+            id: specialtyId * 100 + i,
+            name: randomName,
+            crm: `${Math.floor(Math.random() * 90000) + 10000}-${randomState}`,
+            experience: `${Math.floor(Math.random() * 20) + 5} anos`,
+            rating: (Math.random() * 1.5 + 3.5).toFixed(1),
+            consultations: Math.floor(Math.random() * 2000) + 100,
+            availability: Math.random() > 0.3 ? 'online' : (Math.random() > 0.5 ? 'busy' : 'offline')
+        });
+    }
+    
+    return doctors;
+}
+
+// Get Availability Status
+function getAvailabilityStatus(specialty) {
+    const onlineDoctors = specialty.doctors.filter(d => d.availability === 'online').length;
+    const busyDoctors = specialty.doctors.filter(d => d.availability === 'busy').length;
+    
+    if (onlineDoctors > 0) return 'online';
+    if (busyDoctors > 0) return 'busy';
+    return 'offline';
+}
+
+// Get Availability Class
+function getAvailabilityClass(status) {
+    switch (status) {
+        case 'online': return 'bg-green-50 text-green-700';
+        case 'busy': return 'bg-yellow-50 text-yellow-700';
+        case 'offline': return 'bg-red-50 text-red-700';
+        default: return 'bg-gray-50 text-gray-700';
+    }
+}
+
+// Get Availability Text
+function getAvailabilityText(status) {
+    switch (status) {
+        case 'online': return 'Disponível agora';
+        case 'busy': return 'Ocupado';
+        case 'offline': return 'Indisponível';
+        default: return 'Status desconhecido';
+    }
 }
 
 /**
  * RENDERIZAR ESPECIALIDADES
- * Cria e exibe os cards das especialidades médicas na interface
- * @param {Array} specialtiesToRender - Array de especialidades para renderizar (opcional)
  */
 function renderSpecialties(specialtiesToRender = null) {
     const grid = document.getElementById('specialtiesGrid');
     if (!grid) return;
 
-    grid.innerHTML = specialties.map(specialty => `
-        <div class="specialty-card-pro specialty-enhanced zoom glow scroll-element stagger-item"
-             onclick="openSpecialtyModal('${specialty.id}')">
-            <div class="specialty-icon float">${specialty.icon}</div>
-            <h3 class="text-xl font-bold mb-2 sliding-underline">${specialty.name}</h3>
-            <!-- resto do conteúdo -->
-        </div>
-    `).join('');
-    
-    // Ativar animações stagger
-    const cards = document.querySelectorAll('.stagger-item');
-    window.staggerAnimation(cards, 100);
-    
-    // Usa especialidades fornecidas ou carrega do estado global/dados padrão
     const specialties = specialtiesToRender || TeleMed.specialties || MEDICAL_SPECIALTIES;
     
     grid.innerHTML = specialties.map(specialty => {
+        const availabilityStatus = getAvailabilityStatus(specialty);
+        const availabilityClass = getAvailabilityClass(availabilityStatus);
+        const availabilityText = getAvailabilityText(availabilityStatus);
+        
         return `
-            <div class="specialty-card ${specialty.className} rounded-xl p-6 text-white cursor-pointer shadow-lg"
+            <div class="specialty-card bg-white rounded-xl p-6 cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-300"
                  onclick="openSpecialtyModal('${specialty.id}')"
                  data-name="${specialty.name}"
-                 data-description="${specialty.description}">
+                 data-description="${specialty.description}"
+                 data-specialty-id="${specialty.id}">
+                
                 <div class="flex justify-between items-start mb-4">
                     <div class="flex-1">
-                        <h3 class="text-xl font-bold mb-2">${specialty.name}</h3>
-                        <p class="text-sm opacity-90">${specialty.description}</p>
+                        <h3 class="text-xl font-bold mb-2 text-gray-900">${specialty.name}</h3>
+                        <p class="text-sm text-gray-600">${specialty.description}</p>
                     </div>
-                    <div class="text-5xl opacity-80 ml-4">${specialty.icon}</div>
+                    <div class="text-4xl ml-4">${specialty.icon}</div>
                 </div>
                 
-                <div class="bg-white bg-opacity-20 rounded-full px-3 py-1 text-xs font-bold mb-3 inline-block">
-                    ⏰ ${specialty.waitTime} de espera
-                </div>
-                
-                <div class="flex items-center gap-2 mb-2">
-                    <div class="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
-                    <span class="text-sm">${specialty.doctorsOnline} médicos online</span>
-                </div>
-                
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 text-sm">
-                        <span class="text-yellow-300">${'★'.repeat(Math.floor(specialty.rating))}</span>
-                        <span>${specialty.rating} (${specialty.reviewsFormatted})</span>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <div class="bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-xs font-semibold">
+                        ⏰ ${specialty.waitTime} de espera
                     </div>
-                    <div class="text-lg font-bold">${specialty.priceFormatted}</div>
+                    <div class="${availabilityClass} rounded-full px-3 py-1 text-xs font-semibold">
+                        <div class="flex items-center gap-1">
+                            <div class="w-2 h-2 ${availabilityStatus === 'online' ? 'bg-green-400 animate-pulse' : availabilityStatus === 'busy' ? 'bg-yellow-400' : 'bg-red-400'} rounded-full"></div>
+                            ${availabilityText}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                        <span>👨‍⚕️ ${specialty.doctorsOnline} médicos online</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-sm">
+                        <span class="text-yellow-400">${'★'.repeat(Math.floor(specialty.rating))}</span>
+                        <span class="text-gray-600">${specialty.rating}</span>
+                        <span class="text-gray-400">(${specialty.reviewsFormatted})</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div class="text-2xl font-bold text-green-600">${specialty.priceFormatted}</div>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                            onclick="(function(e){e.stopPropagation(); quickConsultation('${specialty.id}');})(event)">
+                        Consultar Agora
+                    </button>
                 </div>
             </div>
         `;
     }).join('');
     
-    // Add animation to cards
     animateSpecialtyCards();
 }
 
-// Animate Specialty Cards
 function animateSpecialtyCards() {
     const cards = document.querySelectorAll('.specialty-card');
     cards.forEach((card, index) => {
@@ -369,27 +339,86 @@ function animateSpecialtyCards() {
     });
 }
 
-// Search Specialties
-function searchSpecialties(query) {
-    if (!query.trim()) {
-        renderSpecialties();
-        return;
+/**
+ * SISTEMA DE BUSCA E FILTROS
+ */
+function searchSpecialties(query, filters = {}) {
+    let filteredSpecialties = [...MEDICAL_SPECIALTIES];
+    
+    if (query && query.trim()) {
+        const searchTerm = query.toLowerCase();
+        filteredSpecialties = filteredSpecialties.filter(specialty => 
+            specialty.name.toLowerCase().includes(searchTerm) ||
+            specialty.description.toLowerCase().includes(searchTerm) ||
+            specialty.features.some(feature => feature.toLowerCase().includes(searchTerm))
+        );
     }
     
-    const filteredSpecialties = MEDICAL_SPECIALTIES.filter(specialty => 
-        specialty.name.toLowerCase().includes(query.toLowerCase()) ||
-        specialty.description.toLowerCase().includes(query.toLowerCase())
-    );
+    if (filters.availability) {
+        filteredSpecialties = filteredSpecialties.filter(specialty => {
+            const status = getAvailabilityStatus(specialty);
+            return filters.availability.includes(status);
+        });
+    }
+    
+    if (filters.sortBy) {
+        filteredSpecialties = sortSpecialties(filteredSpecialties, filters.sortBy);
+    }
     
     renderSpecialties(filteredSpecialties);
     
-    // Show no results message if needed
     if (filteredSpecialties.length === 0) {
         showNoResultsMessage(query);
     }
+    
+    updateResultsCount(filteredSpecialties.length, MEDICAL_SPECIALTIES.length);
 }
 
-// Show No Results Message
+function sortSpecialties(specialties, sortBy) {
+    const sortedSpecialties = [...specialties];
+    
+    switch (sortBy) {
+        case 'price-asc':
+            return sortedSpecialties.sort((a, b) => a.price - b.price);
+        case 'price-desc':
+            return sortedSpecialties.sort((a, b) => b.price - a.price);
+        case 'rating':
+            return sortedSpecialties.sort((a, b) => b.rating - a.rating);
+        case 'wait-time':
+            return sortedSpecialties.sort((a, b) => {
+                const aWait = parseInt(a.waitTime.match(/\d+/)[0]);
+                const bWait = parseInt(b.waitTime.match(/\d+/)[0]);
+                return aWait - bWait;
+            });
+        case 'name':
+            return sortedSpecialties.sort((a, b) => a.name.localeCompare(b.name));
+        case 'availability':
+            return sortedSpecialties.sort((a, b) => {
+                const statusOrder = { 'online': 0, 'busy': 1, 'offline': 2 };
+                const aStatus = getAvailabilityStatus(a);
+                const bStatus = getAvailabilityStatus(b);
+                return statusOrder[aStatus] - statusOrder[bStatus];
+            });
+        default:
+            return sortedSpecialties;
+    }
+}
+
+function updateResultsCount(filtered, total) {
+    const countElement = document.getElementById('resultsCount');
+    if (countElement) {
+        if (filtered === total) {
+            countElement.textContent = `${total} especialidades disponíveis`;
+        } else {
+            countElement.textContent = `${filtered} de ${total} especialidades encontradas`;
+        }
+    }
+}
+
+function quickSearchSpecialties(query) {
+    searchSpecialties(query);
+}
+
 function showNoResultsMessage(query) {
     const grid = document.getElementById('specialtiesGrid');
     if (!grid) return;
@@ -406,7 +435,6 @@ function showNoResultsMessage(query) {
     `;
 }
 
-// Clear Search
 function clearSearch() {
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
@@ -415,199 +443,292 @@ function clearSearch() {
     renderSpecialties();
 }
 
-// Open Specialty Modal
+/**
+ * SISTEMA DE MODAL
+ */
 function openSpecialtyModal(specialtyId) {
     const specialty = MEDICAL_SPECIALTIES.find(s => s.id == specialtyId);
     if (!specialty) return;
     
-    // Store selected specialty
     TeleMed.selectedSpecialty = specialty;
-    
-    // Update modal content
     updateSpecialtyModal(specialty);
-    
-    // Show modal
     document.getElementById('specialtyModal').classList.remove('hidden');
 }
 
-// Update Specialty Modal
+function closeSpecialtyModal() {
+    document.getElementById('specialtyModal').classList.add('hidden');
+    TeleMed.selectedSpecialty = null;
+}
+
 function updateSpecialtyModal(specialty) {
-    // Update basic info
     document.getElementById('modalTitle').textContent = specialty.name;
     document.getElementById('modalIcon').textContent = specialty.icon;
     document.getElementById('modalPrice').textContent = specialty.priceFormatted;
-    document.getElementById('modalDescription').textContent = specialty.description;
     
-    // Update features list
-    const modalBody = document.querySelector('#specialtyModal .modal-body');
-    const featuresHtml = `
-        <div class="text-center mb-6">
-            <div class="text-6xl mb-4">${specialty.icon}</div>
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">${specialty.name}</h3>
-            <div class="text-3xl font-bold text-green-600 mb-2">${specialty.priceFormatted}</div>
-            <div class="text-gray-600">${specialty.description}</div>
+    const availabilityStatus = getAvailabilityStatus(specialty);
+    const availabilityText = getAvailabilityText(availabilityStatus);
+    const availabilityClass = getAvailabilityClass(availabilityStatus);
+    
+    const modalBody = document.getElementById('modalBody');
+    modalBody.innerHTML = `
+        <div class="mb-6">
+            <div class="text-center mb-4">
+                <p class="text-gray-600 mb-4">${specialty.description}</p>
+                <div class="flex justify-center items-center gap-4 mb-4">
+                    <div class="${availabilityClass} rounded-full px-4 py-2 text-sm font-semibold">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 ${availabilityStatus === 'online' ? 'bg-green-400 animate-pulse' : availabilityStatus === 'busy' ? 'bg-yellow-400' : 'bg-red-400'} rounded-full"></div>
+                            ${availabilityText}
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 text-blue-700 rounded-full px-4 py-2 text-sm font-semibold">
+                        ⏰ ${specialty.waitTime} de espera
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="mb-6">
-            <h4 class="font-bold text-gray-900 mb-3">✅ Serviços incluídos:</h4>
-            <div class="space-y-2">
+            <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <span class="text-green-600">✅</span>
+                Serviços incluídos
+            </h4>
+            <div class="grid grid-cols-1 gap-2">
                 ${specialty.features.map(feature => `
-                    <div class="flex items-center space-x-2">
-                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span class="text-sm text-gray-600">${feature}</span>
+                    <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                        <div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                        <span class="text-sm text-gray-700">${feature}</span>
                     </div>
                 `).join('')}
             </div>
         </div>
         
         <div class="mb-6">
-            <h4 class="font-bold text-gray-900 mb-3">👨‍⚕️ Médicos disponíveis:</h4>
-            <div class="space-y-2">
-                ${specialty.doctors.map(doctor => `
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                            <div class="font-semibold text-gray-900">${doctor.name}</div>
-                            <div class="text-sm text-gray-600">${doctor.crm} • ${doctor.experience}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="flex items-center space-x-1">
-                                <span class="text-yellow-500">★</span>
-                                <span class="text-sm font-semibold">${doctor.rating}</span>
+            <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <span class="text-blue-600">👨‍⚕️</span>
+                Médicos disponíveis (${specialty.doctors.length})
+            </h4>
+            <div class="space-y-3">
+                ${specialty.doctors.map(doctor => {
+                    const doctorStatusClass = doctor.availability === 'online' ? 'bg-green-100 border-green-200' : 
+                                            doctor.availability === 'busy' ? 'bg-yellow-100 border-yellow-200' : 
+                                            'bg-red-100 border-red-200';
+                    const doctorStatusText = doctor.availability === 'online' ? 'Disponível' : 
+                                           doctor.availability === 'busy' ? 'Ocupado' : 'Offline';
+                    const doctorStatusIcon = doctor.availability === 'online' ? '🟢' : 
+                                           doctor.availability === 'busy' ? '🟡' : '🔴';
+                    
+                    return `
+                        <div class="flex items-center justify-between p-4 ${doctorStatusClass} border rounded-lg">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900">${doctor.name}</div>
+                                <div class="text-sm text-gray-600">${doctor.crm} • ${doctor.experience} de experiência</div>
+                                <div class="text-xs text-gray-500 mt-1">${doctor.consultations} consultas realizadas</div>
                             </div>
-                            <div class="text-xs text-gray-500">${doctor.consultations} consultas</div>
+                            <div class="text-right">
+                                <div class="flex items-center gap-1 mb-1">
+                                    <span class="text-yellow-500">★</span>
+                                    <span class="text-sm font-semibold">${doctor.rating}</span>
+                                </div>
+                                <div class="text-xs flex items-center gap-1">
+                                    <span>${doctorStatusIcon}</span>
+                                    <span>${doctorStatusText}</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         </div>
         
-        <div class="space-y-3">
-            <button onclick="scheduleAppointment()" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
-                📅 Agendar Consulta
-            </button>
-            <button onclick="startImmediateConsultation()" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                🔴 Consulta Imediata
-            </button>
-        </div>
-    `;
-    
-    modalBody.innerHTML = featuresHtml;
+        <div class="border-t border-gray-200 pt-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="text-sm text-gray-600">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span>⭐</span>
+                        <span>${specialty.rating} (${specialty.reviewsFormatted})</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span>👥</span>
+                        <span>${specialty.doctorsOnline} médicos online</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-600">${specialty.priceFormatted}</div>
+                    <div class="text-xs text-gray-500">por consulta</div>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <button onclick="scheduleAppointment()" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center gap-2">
+                    <span>📅</span>
+                    Agendar Consulta
+                </button>
+                <button onclick="startImmediateConsultation()" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center gap-2">
+                    <span>🔴</span>
+                    Consulta Imediata
+                </button>
+            </div>
+        </div>`;
 }
 
-// Schedule Appointment
-function scheduleAppointment() {
-    if (!TeleMed.selectedSpecialty) return;
-    
-    // Close specialty modal
-    closeModal('specialtyModal');
-    
-    // Open appointment scheduling
-    openAppointmentScheduling();
+/**
+ * FUNÇÕES DE FILTROS E AÇÕES
+ */
+function applySorting(sortBy) {
+    const currentQuery = document.getElementById('searchInput')?.value || '';
+    searchSpecialties(currentQuery, { sortBy });
 }
 
-// Start Immediate Consultation
-function startImmediateConsultation() {
-    if (!TeleMed.selectedSpecialty) return;
+function filterByAvailability(status, buttonElement) {
+    const currentQuery = document.getElementById('searchInput')?.value || '';
     
-    // Close specialty modal
-    closeModal('specialtyModal');
+    const filterButtons = document.querySelectorAll('.availability-filter');
+    filterButtons.forEach(btn => {
+        btn.classList.remove('bg-green-100', 'bg-yellow-100', 'border-green-500', 'border-yellow-500');
+    });
     
-    // Open payment modal
-    openPaymentModal();
-}
-
-// Open Appointment Scheduling
-function openAppointmentScheduling() {
-    // This would open a calendar/scheduling interface
-    showNotification('Agendamento', 'Abrindo calendário para agendamento...', 'info');
-    
-    // Simulate appointment scheduling
-    setTimeout(() => {
-        const appointment = {
-            id: generateId(),
-            specialty: TeleMed.selectedSpecialty.name,
-            doctor: TeleMed.selectedSpecialty.doctors[0].name,
-            date: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-            time: '14:00',
-            price: TeleMed.selectedSpecialty.price,
-            status: 'scheduled'
-        };
-        
-        // Add to user appointments
-        if (!TeleMed.userAppointments) {
-            TeleMed.userAppointments = [];
+    if (buttonElement) {
+        if (status === 'online') {
+            buttonElement.classList.add('bg-green-100', 'border-green-500');
+        } else if (status === 'busy') {
+            buttonElement.classList.add('bg-yellow-100', 'border-yellow-500');
         }
-        TeleMed.userAppointments.push(appointment);
-        
-        showNotification('Agendamento confirmado!', 
-            `Consulta de ${appointment.specialty} agendada para ${formatDate(appointment.date)} às ${appointment.time}`, 
-            'success'
-        );
+    }
+    
+    searchSpecialties(currentQuery, { availability: [status] });
+}
+
+function clearAllFilters() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+        sortSelect.value = '';
+    }
+    
+    const filterButtons = document.querySelectorAll('.availability-filter');
+    filterButtons.forEach(btn => {
+        btn.classList.remove('bg-green-100', 'bg-yellow-100', 'border-green-500', 'border-yellow-500');
+    });
+    
+    renderSpecialties();
+    updateResultsCount(MEDICAL_SPECIALTIES.length, MEDICAL_SPECIALTIES.length);
+}
+
+function quickConsultation(specialtyId) {
+    const specialty = MEDICAL_SPECIALTIES.find(s => s.id == specialtyId);
+    if (!specialty) return;
+    
+    TeleMed.selectedSpecialty = specialty;
+    
+    const availabilityStatus = getAvailabilityStatus(specialty);
+    
+    if (availabilityStatus === 'offline') {
+        showNotification('Indisponível', 'Não há médicos disponíveis no momento para esta especialidade', 'warning');
+        return;
+    }
+    
+    if (availabilityStatus === 'busy') {
+        showNotification('Médicos ocupados', 'Todos os médicos estão ocupados. Você será adicionado à fila de espera.', 'info');
+    }
+    
+    showNotification('Iniciando consulta', `Preparando consulta de ${specialty.name}...`, 'info');
+    
+    setTimeout(() => {
+        showNotification('Consulta iniciada', `Você está na fila para ${specialty.name}. Tempo estimado: ${specialty.waitTime}`, 'success');
     }, 2000);
 }
 
-// Open Payment Modal
-function openPaymentModal() {
+function scheduleAppointment() {
     if (!TeleMed.selectedSpecialty) return;
-    
-    // Update payment amount
-    document.getElementById('paymentAmount').textContent = TeleMed.selectedSpecialty.priceFormatted;
-    
-    // Show payment modal
-    document.getElementById('paymentModal').classList.remove('hidden');
+    closeSpecialtyModal();
+    showNotification('Agendamento', 'Abrindo calendário para agendamento...', 'info');
 }
 
-// Get Specialty by ID
+function startImmediateConsultation() {
+    if (!TeleMed.selectedSpecialty) return;
+    closeSpecialtyModal();
+    showNotification('Consulta Imediata', 'Redirecionando para pagamento...', 'info');
+}
+
 function getSpecialtyById(id) {
     return MEDICAL_SPECIALTIES.find(s => s.id == id);
 }
 
-// Get Specialties by Category
-function getSpecialtiesByCategory(category) {
-    // This could be expanded to include categories
-    return MEDICAL_SPECIALTIES;
-}
-
-// Get Available Doctors
 function getAvailableDoctors(specialtyId) {
     const specialty = getSpecialtyById(specialtyId);
     if (!specialty) return [];
-    
     return specialty.doctors.filter(doctor => doctor.availability === 'online');
 }
 
-// Update Specialty Availability
 function updateSpecialtyAvailability() {
     MEDICAL_SPECIALTIES.forEach(specialty => {
-        // Simulate real-time updates
         specialty.doctorsOnline = Math.max(1, specialty.doctorsOnline + Math.floor(Math.random() * 3) - 1);
         specialty.waitTime = `~${Math.floor(Math.random() * 20) + 5} min`;
         
-        // Update doctors availability
         specialty.doctors.forEach(doctor => {
-            if (Math.random() < 0.1) { // 10% chance of status change
+            if (Math.random() < 0.1) {
                 doctor.availability = doctor.availability === 'online' ? 'busy' : 'online';
             }
         });
     });
     
-    // Re-render if on specialties section
     if (TeleMed.currentSection === 'specialties') {
         renderSpecialties();
     }
 }
 
-// Start real-time updates
-setInterval(updateSpecialtyAvailability, 30000); // Update every 30 seconds
+function showNotification(title, message, type = 'info') {
+    if (window.showNotification) {
+        window.showNotification(title, message, type);
+        return;
+    }
+    alert(`${title}: ${message}`);
+}
 
-// Export functions
+function initializeSpecialtiesSystem() {
+    loadSpecialtiesData();
+    updateResultsCount(MEDICAL_SPECIALTIES.length, MEDICAL_SPECIALTIES.length);
+    setInterval(updateSpecialtyAvailability, 30000);
+    console.log('🏥 Specialties system initialized');
+}
+
+// Initialize when DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeSpecialtiesSystem);
+} else {
+    initializeSpecialtiesSystem();
+}
+
+// Export functions and data to global window object
+window.MEDICAL_SPECIALTIES = MEDICAL_SPECIALTIES;
 window.renderSpecialties = renderSpecialties;
 window.searchSpecialties = searchSpecialties;
+window.sortSpecialties = sortSpecialties;
+window.quickSearchSpecialties = quickSearchSpecialties;
 window.openSpecialtyModal = openSpecialtyModal;
+window.closeSpecialtyModal = closeSpecialtyModal;
 window.scheduleAppointment = scheduleAppointment;
 window.startImmediateConsultation = startImmediateConsultation;
 window.clearSearch = clearSearch;
+window.clearAllFilters = clearAllFilters;
+window.applySorting = applySorting;
+window.filterByAvailability = filterByAvailability;
+window.quickConsultation = quickConsultation;
 window.getSpecialtyById = getSpecialtyById;
 window.getAvailableDoctors = getAvailableDoctors;
+window.getAvailabilityStatus = getAvailabilityStatus;
+window.getAvailabilityClass = getAvailabilityClass;
+window.getAvailabilityText = getAvailabilityText;
+window.updateSpecialtyModal = updateSpecialtyModal;
+window.animateSpecialtyCards = animateSpecialtyCards;
+window.showNoResultsMessage = showNoResultsMessage;
+window.updateResultsCount = updateResultsCount;
+window.updateSpecialtyAvailability = updateSpecialtyAvailability;
+window.loadSpecialtiesData = loadSpecialtiesData;
 
 console.log('✅ TeleMed Specialties System Loaded');

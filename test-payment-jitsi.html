@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Sistema de Pagamentos e Jitsi Meet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">🧪 Teste - Sistema de Pagamentos + Jitsi Meet</h1>
+                <p class="text-gray-600">Teste completo do fluxo: Pagamento → Fila → Videochamada</p>
+                
+                <!-- Configuração Jitsi -->
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <h3 class="font-bold text-blue-900 mb-2">🔧 Configuração Jitsi Meet</h3>
+                    <div class="text-sm text-blue-800">
+                        <p><strong>App ID:</strong> vpaas-magic-cookie-d4eb95e56d4140978d223283225476be</p>
+                        <p><strong>API Key:</strong> vpaas-magic-cookie-d4eb95e56d4140978d223283225476be/feda42</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Testes -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Teste de Especialidades -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">1️⃣ Especialidades Disponíveis</h2>
+                    
+                    <div id="specialtiesTest" class="space-y-4">
+                        <div class="text-center py-8">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                            <p class="mt-2 text-gray-600">Carregando especialidades...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teste de Pagamento -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">2️⃣ Sistema de Pagamentos</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h3 class="font-medium text-gray-900 mb-2">Especialidade Selecionada:</h3>
+                            <div id="selectedSpecialty" class="text-gray-600">Nenhuma especialidade selecionada</div>
+                        </div>
+                        
+                        <button id="testPaymentBtn" onclick="testPaymentFlow()" disabled
+                                class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+                            💳 Testar Pagamento
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Teste de Fila -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">3️⃣ Sistema de Fila</h2>
+                    
+                    <div class="space-y-4">
+                        <div id="queueStatus" class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <div class="text-yellow-800">⏳ Aguardando pagamento...</div>
+                        </div>
+                        
+                        <button id="testQueueBtn" onclick="testQueueSystem()" disabled
+                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+                            📋 Simular Fila
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Teste de Videochamada -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">4️⃣ Videochamada Jitsi</h2>
+                    
+                    <div class="space-y-4">
+                        <div id="videoCallStatus" class="p-4 bg-gray-50 rounded-lg">
+                            <div class="text-gray-600">📹 Aguardando sua vez na fila...</div>
+                        </div>
+                        
+                        <button id="testVideoBtn" onclick="testVideoCall()" disabled
+                                class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+                            🎥 Iniciar Videochamada
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log de Atividades -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">📝 Log de Atividades</h2>
+                <div id="activityLog" class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm h-64 overflow-y-auto">
+                    <div>🚀 Sistema inicializado...</div>
+                </div>
+            </div>
+
+            <!-- Instruções -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
+                <h3 class="text-lg font-bold text-blue-900 mb-3">📋 Como Testar</h3>
+                <ol class="list-decimal list-inside space-y-2 text-blue-800">
+                    <li>Selecione uma especialidade clicando no card</li>
+                    <li>Clique em "Testar Pagamento" para simular o pagamento</li>
+                    <li>Observe a entrada na fila de espera</li>
+                    <li>Clique em "Iniciar Videochamada" quando habilitado</li>
+                    <li>A videochamada será aberta em uma nova janela/aba</li>
+                </ol>
+                
+                <div class="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+                    <p class="text-yellow-800 text-sm">
+                        <strong>⚠️ Nota:</strong> Este é um ambiente de teste. Os pagamentos são simulados e as videochamadas usam salas temporárias.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/payments.js"></script>
+    <script src="js/queue.js"></script>
+    <script src="js/videocall.js"></script>
+
+    <script>
+        let selectedSpecialtyData = null;
+        let currentAppointmentId = null;
+
+        // Função para adicionar log
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('activityLog');
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const icons = {
+                info: 'ℹ️',
+                success: '✅',
+                error: '❌',
+                warning: '⚠️'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${icons[type]} ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Carregar especialidades para teste
+        async function loadTestSpecialties() {
+            try {
+                addLog('Carregando especialidades do banco de dados...');
+                
+                const { data, error } = await supabase
+                    .from('specialties')
+                    .select('id, name, description, icon, price, duration, is_active')
+                    .eq('is_active', true)
+                    .limit(4);
+
+                if (error) throw error;
+
+                const container = document.getElementById('specialtiesTest');
+                
+                if (data && data.length > 0) {
+                    container.innerHTML = data.map(specialty => `
+                        <div class="specialty-test-card p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                             onclick="selectTestSpecialty('${specialty.id}', '${specialty.name}', ${specialty.price}, '${specialty.icon}', '${specialty.description}')">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-bold text-gray-900">${specialty.name}</h3>
+                                <span class="text-2xl">${specialty.icon}</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">${specialty.description}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">${specialty.duration || 30} min</span>
+                                <span class="font-bold text-green-600">R$ ${parseFloat(specialty.price).toFixed(2)}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    addLog(`${data.length} especialidades carregadas com sucesso`, 'success');
+                } else {
+                    container.innerHTML = '<div class="text-center py-8 text-gray-500">Nenhuma especialidade encontrada</div>';
+                    addLog('Nenhuma especialidade encontrada', 'warning');
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar especialidades:', error);
+                addLog(`Erro ao carregar especialidades: ${error.message}`, 'error');
+                
+                document.getElementById('specialtiesTest').innerHTML = `
+                    <div class="text-center py-8 text-red-500">
+                        <div class="text-4xl mb-2">❌</div>
+                        <p>Erro ao carregar especialidades</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Selecionar especialidade para teste
+        function selectTestSpecialty(id, name, price, icon, description) {
+            selectedSpecialtyData = {
+                id: id,
+                name: name,
+                price: price,
+                icon: icon,
+                description: description,
+                duration: 30,
+                doctorsOnline: Math.floor(Math.random() * 10) + 1
+            };
+
+            // Atualizar interface
+            document.getElementById('selectedSpecialty').innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-2xl mr-3">${icon}</span>
+                    <div>
+                        <div class="font-bold">${name}</div>
+                        <div class="text-sm text-gray-500">R$ ${parseFloat(price).toFixed(2)}</div>
+                    </div>
+                </div>
+            `;
+
+            // Habilitar botão de pagamento
+            document.getElementById('testPaymentBtn').disabled = false;
+            
+            // Destacar especialidade selecionada
+            document.querySelectorAll('.specialty-test-card').forEach(card => {
+                card.classList.remove('border-blue-500', 'bg-blue-50');
+                card.classList.add('border-gray-200');
+            });
+            event.target.closest('.specialty-test-card').classList.add('border-blue-500', 'bg-blue-50');
+
+            addLog(`Especialidade selecionada: ${name}`, 'success');
+        }
+
+        // Testar fluxo de pagamento
+        async function testPaymentFlow() {
+            if (!selectedSpecialtyData) {
+                addLog('Nenhuma especialidade selecionada', 'error');
+                return;
+            }
+
+            try {
+                addLog('Iniciando simulação de pagamento...');
+                
+                // Simular pagamento (sem modal para teste)
+                addLog('Processando pagamento simulado...');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Criar consulta simulada
+                const appointmentId = 'test_' + Date.now();
+                currentAppointmentId = appointmentId;
+                
+                addLog(`Pagamento aprovado! ID da consulta: ${appointmentId}`, 'success');
+                
+                // Atualizar status
+                document.getElementById('queueStatus').innerHTML = `
+                    <div class="text-green-800">✅ Pagamento aprovado - Posição na fila: 3</div>
+                `;
+                
+                // Habilitar teste de fila
+                document.getElementById('testQueueBtn').disabled = false;
+                
+                addLog('Adicionado à fila de espera na posição 3', 'info');
+
+            } catch (error) {
+                addLog(`Erro no pagamento: ${error.message}`, 'error');
+            }
+        }
+
+        // Testar sistema de fila
+        async function testQueueSystem() {
+            if (!currentAppointmentId) {
+                addLog('Nenhuma consulta ativa para testar fila', 'error');
+                return;
+            }
+
+            try {
+                addLog('Simulando movimentação na fila...');
+                
+                // Simular progressão na fila
+                const positions = [3, 2, 1, 0];
+                
+                for (let i = 0; i < positions.length; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                    const position = positions[i];
+                    
+                    if (position === 0) {
+                        document.getElementById('queueStatus').innerHTML = `
+                            <div class="text-purple-800">🎉 Sua vez chegou! Médico aguardando...</div>
+                        `;
+                        document.getElementById('testVideoBtn').disabled = false;
+                        addLog('Sua vez na fila! Médico aguardando na sala de consulta', 'success');
+                    } else {
+                        document.getElementById('queueStatus').innerHTML = `
+                            <div class="text-blue-800">⏳ Posição na fila: ${position} - Tempo estimado: ${position * 5} min</div>
+                        `;
+                        addLog(`Posição atualizada: ${position}`, 'info');
+                    }
+                }
+
+            } catch (error) {
+                addLog(`Erro na simulação da fila: ${error.message}`, 'error');
+            }
+        }
+
+        // Testar videochamada
+        async function testVideoCall() {
+            if (!currentAppointmentId) {
+                addLog('Nenhuma consulta ativa para videochamada', 'error');
+                return;
+            }
+
+            try {
+                addLog('Iniciando videochamada com Jitsi Meet...');
+                
+                // Gerar nome da sala
+                const roomName = `test-consultation-${currentAppointmentId}`;
+                
+                // Atualizar status
+                document.getElementById('videoCallStatus').innerHTML = `
+                    <div class="text-green-600">🎥 Conectando à videochamada...</div>
+                `;
+
+                // Abrir Jitsi Meet em nova aba
+                const jitsiUrl = `https://8x8.vc/${roomName}`;
+                const videoWindow = window.open(jitsiUrl, '_blank', 'width=1200,height=800');
+                
+                if (videoWindow) {
+                    addLog(`Videochamada aberta: ${roomName}`, 'success');
+                    addLog('Sala de consulta criada com sucesso', 'success');
+                    
+                    document.getElementById('videoCallStatus').innerHTML = `
+                        <div class="text-green-600">✅ Videochamada ativa na nova aba</div>
+                    `;
+                    
+                    // Simular notificação para médico
+                    setTimeout(() => {
+                        addLog('Notificação enviada para o médico', 'info');
+                    }, 1000);
+                    
+                } else {
+                    throw new Error('Não foi possível abrir a videochamada. Verifique se pop-ups estão bloqueados.');
+                }
+
+            } catch (error) {
+                addLog(`Erro na videochamada: ${error.message}`, 'error');
+                document.getElementById('videoCallStatus').innerHTML = `
+                    <div class="text-red-600">❌ Erro ao iniciar videochamada</div>
+                `;
+            }
+        }
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('Página de teste carregada', 'success');
+            loadTestSpecialties();
+        });
+    </script>
+</body>
+</html>

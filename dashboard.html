@@ -168,12 +168,51 @@
                         <p class="text-xl text-gray-600">Escolha a especialidade que você precisa</p>
                     </div>
 
-                    <!-- Search -->
-                    <div class="max-w-2xl mx-auto mb-12">
-                        <div class="relative">
+                    <!-- Search and Filters -->
+                    <div class="max-w-4xl mx-auto mb-12">
+                        <!-- Search Bar -->
+                        <div class="relative mb-6">
                             <input type="text" id="searchInput" placeholder="🔍 Buscar especialidade..."
                                 class="w-full px-6 py-4 text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-lg"
-                                oninput="searchSpecialties(this.value)">
+                                oninput="quickSearchSpecialties(this.value)">
+                        </div>
+                        
+                        <!-- Filter Controls -->
+                        <div class="flex flex-wrap gap-4 justify-center items-center">
+                            <!-- Sort Dropdown -->
+                            <select id="sortSelect" onchange="applySorting(this.value)" 
+                                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Ordenar por</option>
+                                <option value="availability">Disponibilidade</option>
+                                <option value="price-asc">Menor preço</option>
+                                <option value="price-desc">Maior preço</option>
+                                <option value="rating">Melhor avaliação</option>
+                                <option value="wait-time">Menor tempo de espera</option>
+                                <option value="name">Nome A-Z</option>
+                            </select>
+                            
+                            <!-- Availability Filter -->
+                            <div class="flex gap-2">
+                                <button onclick="filterByAvailability('online')" 
+                                    class="availability-filter px-3 py-2 text-sm rounded-full border border-green-300 text-green-700 hover:bg-green-50 transition">
+                                    🟢 Disponível
+                                </button>
+                                <button onclick="filterByAvailability('busy')" 
+                                    class="availability-filter px-3 py-2 text-sm rounded-full border border-yellow-300 text-yellow-700 hover:bg-yellow-50 transition">
+                                    🟡 Ocupado
+                                </button>
+                            </div>
+                            
+                            <!-- Clear Filters -->
+                            <button onclick="clearAllFilters()" 
+                                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 underline">
+                                Limpar filtros
+                            </button>
+                        </div>
+                        
+                        <!-- Results Count -->
+                        <div class="text-center mt-4">
+                            <p id="resultsCount" class="text-gray-600 text-sm"></p>
                         </div>
                     </div>
 
@@ -275,10 +314,37 @@
         </section>
     </main>
 
+    <!-- Specialty Details Modal -->
+    <div id="specialtyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <div class="flex items-center gap-4">
+                    <div id="modalIcon" class="text-4xl"></div>
+                    <div>
+                        <h3 id="modalTitle" class="text-2xl font-bold text-gray-900"></h3>
+                        <p id="modalPrice" class="text-xl font-bold text-green-600"></p>
+                    </div>
+                </div>
+                <button onclick="closeSpecialtyModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div id="modalBody" class="p-6">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
     <script src="js/session.js"></script>
+    <script src="js/specialties.js"></script>
     <script>
         // Verificar autenticação ao carregar a página
         document.addEventListener('DOMContentLoaded', async () => {
@@ -292,6 +358,9 @@
                     if (user) {
                         document.getElementById('userWelcome').textContent = `Olá, ${user.name}!`;
                     }
+                    
+                    // Carregar especialidades do banco de dados
+                    await loadSpecialtiesFromDatabase();
                 }
             } catch (error) {
                 console.error('Erro na inicialização:', error);
@@ -299,6 +368,195 @@
                 document.getElementById('userWelcome').textContent = 'Usuário';
             }
         });
+
+        // Carregar especialidades do banco de dados
+        async function loadSpecialtiesFromDatabase() {
+            try {
+                console.log('🔄 Carregando especialidades do banco...');
+                
+                const { data: specialties, error } = await supabase
+                    .from('specialties')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('name');
+
+                if (error) {
+                    console.error('Erro ao carregar especialidades:', error);
+                    return;
+                }
+
+                console.log('✅ Especialidades carregadas:', specialties.length);
+                
+                // Armazenar no estado global
+                window.databaseSpecialties = specialties;
+                
+                // Renderizar especialidades quando a seção for mostrada
+                if (document.getElementById('specialtiesSection').classList.contains('hidden') === false) {
+                    renderDatabaseSpecialties();
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar especialidades:', error);
+            }
+        }
+
+        // Renderizar especialidades do banco de dados
+        function renderDatabaseSpecialties() {
+            const grid = document.getElementById('specialtiesGrid');
+            if (!grid || !window.databaseSpecialties) return;
+
+            console.log('🎨 Renderizando especialidades...');
+
+            const specialtiesHtml = window.databaseSpecialties.map(specialty => {
+                const priceFormatted = `R$ ${parseFloat(specialty.price).toFixed(2).replace('.', ',')}`;
+                
+                return `
+                    <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow cursor-pointer border border-gray-200"
+                         onclick="openSpecialtyDetails('${specialty.id}')"
+                         data-name="${specialty.name}"
+                         data-description="${specialty.description}">
+                        
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold mb-2 text-gray-900">${specialty.name}</h3>
+                                <p class="text-sm text-gray-600">${specialty.description}</p>
+                            </div>
+                            <div class="text-4xl ml-4">${specialty.icon}</div>
+                        </div>
+                        
+                        <div class="bg-blue-50 rounded-full px-3 py-1 text-xs font-bold mb-3 inline-block text-blue-700">
+                            ⏰ ${specialty.duration} min de consulta
+                        </div>
+                        
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="text-sm text-gray-600">Médicos disponíveis</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-sm">
+                                <span class="text-yellow-400">★★★★★</span>
+                                <span class="text-gray-600">4.8</span>
+                            </div>
+                            <div class="text-lg font-bold text-green-600">${priceFormatted}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            grid.innerHTML = specialtiesHtml;
+            
+            // Adicionar animação aos cards
+            const cards = document.querySelectorAll('#specialtiesGrid > div');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease-out';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        }
+
+        // Abrir detalhes da especialidade
+        function openSpecialtyDetails(specialtyId) {
+            const specialty = window.databaseSpecialties?.find(s => s.id === specialtyId);
+            if (!specialty) return;
+
+            const priceFormatted = `R$ ${parseFloat(specialty.price).toFixed(2).replace('.', ',')}`;
+            
+            alert(`
+Especialidade: ${specialty.name}
+Descrição: ${specialty.description}
+Preço: ${priceFormatted}
+Duração: ${specialty.duration} minutos
+
+Funcionalidade de agendamento será implementada em breve!
+            `);
+        }
+
+        // Buscar especialidades
+        function searchDatabaseSpecialties(query) {
+            if (!window.databaseSpecialties) return;
+            
+            const grid = document.getElementById('specialtiesGrid');
+            if (!grid) return;
+
+            if (!query.trim()) {
+                renderDatabaseSpecialties();
+                return;
+            }
+
+            const filteredSpecialties = window.databaseSpecialties.filter(specialty => 
+                specialty.name.toLowerCase().includes(query.toLowerCase()) ||
+                specialty.description.toLowerCase().includes(query.toLowerCase())
+            );
+
+            if (filteredSpecialties.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <div class="text-6xl mb-4">🔍</div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Nenhuma especialidade encontrada</h3>
+                        <p class="text-gray-600 mb-4">Não encontramos resultados para "${query}"</p>
+                        <button onclick="clearSpecialtySearch()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                            Limpar busca
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Renderizar especialidades filtradas
+            const specialtiesHtml = filteredSpecialties.map(specialty => {
+                const priceFormatted = `R$ ${parseFloat(specialty.price).toFixed(2).replace('.', ',')}`;
+                
+                return `
+                    <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow cursor-pointer border border-gray-200"
+                         onclick="openSpecialtyDetails('${specialty.id}')"
+                         data-name="${specialty.name}"
+                         data-description="${specialty.description}">
+                        
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold mb-2 text-gray-900">${specialty.name}</h3>
+                                <p class="text-sm text-gray-600">${specialty.description}</p>
+                            </div>
+                            <div class="text-4xl ml-4">${specialty.icon}</div>
+                        </div>
+                        
+                        <div class="bg-blue-50 rounded-full px-3 py-1 text-xs font-bold mb-3 inline-block text-blue-700">
+                            ⏰ ${specialty.duration} min de consulta
+                        </div>
+                        
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="text-sm text-gray-600">Médicos disponíveis</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-sm">
+                                <span class="text-yellow-400">★★★★★</span>
+                                <span class="text-gray-600">4.8</span>
+                            </div>
+                            <div class="text-lg font-bold text-green-600">${priceFormatted}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            grid.innerHTML = specialtiesHtml;
+        }
+
+        // Limpar busca de especialidades
+        function clearSpecialtySearch() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            renderDatabaseSpecialties();
+        }
 
         // Funcionalidade de logout
         document.getElementById('logoutButton').addEventListener('click', async () => {
@@ -342,6 +600,11 @@
 
             event.target.classList.remove('border-transparent', 'text-gray-500');
             event.target.classList.add('border-primary-500', 'text-primary-600');
+
+            // Carregar dados específicos da seção
+            if (sectionName === 'specialties' && window.databaseSpecialties) {
+                renderDatabaseSpecialties();
+            }
         }
 
         // Placeholder functions
@@ -350,7 +613,11 @@
         }
 
         function searchSpecialties(query) {
-            console.log('Buscando:', query);
+            if (window.quickSearchSpecialties) {
+                window.quickSearchSpecialties(query);
+            } else {
+                searchDatabaseSpecialties(query);
+            }
         }
 
         function showAppointmentTab(tab) {

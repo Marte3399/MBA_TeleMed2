@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TeleMed - Telemedicina do Futuro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -33,39 +36,278 @@
         }
     </script>
     <style>
+        /* Scroll Reveal Animations */
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
+
         @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideLeft {
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideRight {
+            from {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomOut {
+            from {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
         @keyframes bounceIn {
-            0% { transform: scale(0.3); opacity: 0; }
-            50% { transform: scale(1.05); }
-            70% { transform: scale(0.9); }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            70% {
+                transform: scale(0.9);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
-        
+
+        @keyframes flipInX {
+            from {
+                transform: perspective(400px) rotateX(90deg);
+                opacity: 0;
+            }
+
+            40% {
+                transform: perspective(400px) rotateX(-20deg);
+            }
+
+            60% {
+                transform: perspective(400px) rotateX(10deg);
+            }
+
+            80% {
+                transform: perspective(400px) rotateX(-5deg);
+            }
+
+            to {
+                transform: perspective(400px) rotateX(0deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes flipInY {
+            from {
+                transform: perspective(400px) rotateY(90deg);
+                opacity: 0;
+            }
+
+            40% {
+                transform: perspective(400px) rotateY(-20deg);
+            }
+
+            60% {
+                transform: perspective(400px) rotateY(10deg);
+            }
+
+            80% {
+                transform: perspective(400px) rotateY(-5deg);
+            }
+
+            to {
+                transform: perspective(400px) rotateY(0deg);
+                opacity: 1;
+            }
+        }
+
+        /* Scroll Reveal Classes */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+
+        .scroll-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Animações específicas para scroll reveal */
+        .scroll-reveal.fade-in {
+            transform: none;
+        }
+
+        .scroll-reveal.fade-in.revealed {
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        .scroll-reveal.slide-up.revealed {
+            animation: slideUp 0.8s ease forwards;
+        }
+
+        .scroll-reveal.slide-down.revealed {
+            animation: slideDown 0.8s ease forwards;
+        }
+
+        .scroll-reveal.slide-left.revealed {
+            animation: slideLeft 0.8s ease forwards;
+        }
+
+        .scroll-reveal.slide-right.revealed {
+            animation: slideRight 0.8s ease forwards;
+        }
+
+        .scroll-reveal.zoom-in.revealed {
+            animation: zoomIn 0.8s ease forwards;
+        }
+
+        .scroll-reveal.zoom-out.revealed {
+            animation: zoomOut 0.8s ease forwards;
+        }
+
+        .scroll-reveal.bounce-in.revealed {
+            animation: bounceIn 0.8s ease forwards;
+        }
+
+        .scroll-reveal.flip-x.revealed {
+            animation: flipInX 0.8s ease forwards;
+        }
+
+        .scroll-reveal.flip-y.revealed {
+            animation: flipInY 0.8s ease forwards;
+        }
+
         .hero-bg {
-            background: linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(124, 58, 237, 0.85)), 
-                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect fill="%2306b6d4" width="1200" height="800"/><g fill="%23ffffff" fill-opacity="0.1"><rect x="50" y="150" width="200" height="300" rx="10"/><rect x="300" y="100" width="200" height="350" rx="10"/><rect x="550" y="120" width="200" height="330" rx="10"/><rect x="800" y="80" width="200" height="370" rx="10"/><rect x="1000" y="140" width="150" height="310" rx="10"/></g><g fill="%23ffffff" fill-opacity="0.2"><circle cx="150" cy="200" r="25"/><circle cx="400" cy="180" r="25"/><circle cx="650" cy="190" r="25"/><circle cx="900" cy="160" r="25"/><circle cx="1075" cy="200" r="20"/></g></svg>');
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(124, 58, 237, 0.85)),
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect fill="%2306b6d4" width="1200" height="800"/><g fill="%23ffffff" fill-opacity="0.1"><rect x="50" y="150" width="200" height="300" rx="10"/><rect x="300" y="100" width="200" height="350" rx="10"/><rect x="550" y="120" width="200" height="330" rx="10"/><rect x="800" y="80" width="200" height="370" rx="10"/><rect x="1000" y="140" width="150" height="310" rx="10"/></g><g fill="%23ffffff" fill-opacity="0.2"><circle cx="150" cy="200" r="25"/><circle cx="400" cy="180" r="25"/><circle cx="650" cy="190" r="25"/><circle cx="900" cy="160" r="25"/><circle cx="1075" cy="200" r="20"/></g></svg>');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
-        
+
         .specialty-card {
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background-color: white;
+            color: #374151;
+            transform-origin: center;
         }
-        
+
         .specialty-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: translateY(-12px) scale(1.08);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.35);
+            z-index: 10;
+        }
+
+        /* Garantir que as cores de hover funcionem corretamente */
+        .specialty-card.hover-red {
+            background-color: #ef4444 !important;
+            color: white !important;
+        }
+
+        .specialty-card.hover-green {
+            background-color: #22c55e !important;
+            color: white !important;
+        }
+
+        .specialty-card.hover-blue {
+            background-color: #3b82f6 !important;
+            color: white !important;
+        }
+
+        .specialty-card.hover-purple {
+            background-color: #a855f7 !important;
+            color: white !important;
+        }
+
+        .specialty-card.hover-orange {
+            background-color: #f97316 !important;
+            color: white !important;
+        }
+
+        .specialty-card.hover-pink {
+            background-color: #ec4899 !important;
+            color: white !important;
+        }
+
+        .specialty-card.hover-indigo {
+            background-color: #6366f1 !important;
+            color: white !important;
+        }
+
+        .specialty-card.hover-teal {
+            background-color: #14b8a6 !important;
+            color: white !important;
         }
     </style>
 </head>
+
 <body class="bg-gray-50">
     <!-- Header -->
     <header class="bg-white shadow-sm fixed w-full top-0 z-50">
@@ -75,16 +317,16 @@
                     <h1 class="text-2xl font-bold text-primary-600">TeleMed</h1>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button onclick="redirectToDoctors()" 
-                            class="text-primary-600 hover:text-primary-700 font-medium transition-colors border border-primary-600 px-4 py-2 rounded-full hover:bg-primary-50">
+                    <button onclick="redirectToDoctors()"
+                        class="text-primary-600 hover:text-primary-700 font-medium transition-colors border border-primary-600 px-4 py-2 rounded-full hover:bg-primary-50">
                         Sou Médico
                     </button>
-                    <button onclick="redirectToAuth()" 
-                            class="text-gray-600 hover:text-primary-600 font-medium transition-colors">
+                    <button onclick="redirectToAuth()"
+                        class="text-gray-600 hover:text-primary-600 font-medium transition-colors">
                         Entrar
                     </button>
-                    <button onclick="redirectToAuth()" 
-                            class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
+                    <button onclick="redirectToAuth()"
+                        class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
                         Cadastrar
                     </button>
                 </div>
@@ -99,12 +341,12 @@
                 <h2 class="text-5xl md:text-6xl font-bold mb-6">Telemedicina do Futuro</h2>
                 <p class="text-xl md:text-2xl mb-8 opacity-90">Consultas médicas online com tecnologia de ponta</p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4">
-                    <button onclick="scrollToSpecialties()" 
-                            class="bg-white text-primary-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all transform hover:scale-105">
+                    <button onclick="scrollToSpecialties()"
+                        class="bg-white text-primary-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all transform hover:scale-105">
                         Ver Especialidades
                     </button>
-                    <button onclick="redirectToAuth()" 
-                            class="bg-red-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-red-700 transition-all transform hover:scale-105">
+                    <button onclick="redirectToAuth()"
+                        class="bg-red-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-red-700 transition-all transform hover:scale-105">
                         Consulta Agora
                     </button>
                 </div>
@@ -116,19 +358,23 @@
     <section class="bg-white py-16">
         <div class="max-w-6xl mx-auto px-4">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div class="text-center p-6 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg animate-bounce-in">
+                <div class="scroll-reveal bounce-in text-center p-6 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg"
+                    data-delay="0">
                     <div class="text-4xl font-bold">45</div>
                     <div class="text-sm opacity-90">Médicos Online</div>
                 </div>
-                <div class="text-center p-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg animate-bounce-in" style="animation-delay: 0.1s;">
+                <div class="scroll-reveal bounce-in text-center p-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg"
+                    data-delay="100">
                     <div class="text-4xl font-bold">233</div>
                     <div class="text-sm opacity-90">Consultas Hoje</div>
                 </div>
-                <div class="text-center p-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg animate-bounce-in" style="animation-delay: 0.2s;">
+                <div class="scroll-reveal bounce-in text-center p-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg"
+                    data-delay="200">
                     <div class="text-4xl font-bold">12.2k</div>
                     <div class="text-sm opacity-90">Pacientes Atendidos</div>
                 </div>
-                <div class="text-center p-6 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl shadow-lg animate-bounce-in" style="animation-delay: 0.3s;">
+                <div class="scroll-reveal bounce-in text-center p-6 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl shadow-lg"
+                    data-delay="300">
                     <div class="text-4xl font-bold">4.9★</div>
                     <div class="text-sm opacity-90">Avaliação Média</div>
                 </div>
@@ -140,196 +386,36 @@
     <section id="specialties" class="bg-gray-50 py-16">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-12">
-                <h3 class="text-4xl font-bold text-gray-900 mb-4">Especialidades Médicas</h3>
-                <p class="text-xl text-gray-600">Escolha a especialidade que você precisa</p>
+                <h3 class="scroll-reveal fade-in text-4xl font-bold text-gray-900 mb-4" data-delay="0">Especialidades
+                    Médicas</h3>
+                <p class="scroll-reveal slide-up text-xl text-gray-600" data-delay="200">Escolha a especialidade que
+                    você precisa</p>
             </div>
 
             <!-- Search -->
             <div class="max-w-2xl mx-auto mb-12">
-                <div class="relative">
-                    <input type="text" 
-                           placeholder="🔍 Buscar especialidade..."
-                           class="w-full px-6 py-4 text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-lg">
+                <div class="relative scroll-reveal zoom-in" data-delay="400">
+                    <input type="text" placeholder="🔍 Buscar especialidade..."
+                        class="w-full px-6 py-4 text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-lg">
                 </div>
             </div>
 
+            <!-- Loading State -->
+            <div id="loadingSpecialties" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                <p class="mt-4 text-gray-600">Carregando especialidades...</p>
+            </div>
+
             <!-- Specialties Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Cardiologia -->
-                <div class="specialty-card bg-red-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xl font-bold">Cardiologia</h4>
-                        <div class="text-3xl">❤️</div>
-                    </div>
-                    <p class="text-sm opacity-90 mb-4">Cuidados com o coração e sistema cardiovascular</p>
-                    <div class="flex items-center justify-between text-sm mb-2">
-                        <span>⏱️ 10 min de espera</span>
-                        <span>👨‍⚕️ 28 médicos online</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex text-yellow-400">
-                            <span>★★★★★</span>
-                            <span class="text-white ml-1 text-xs">4.9 (1.2k avaliações)</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-right">
-                        <span class="text-2xl font-bold">R$ 89,90</span>
-                    </div>
-                </div>
+            <div id="specialtiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 hidden">
+                <!-- Specialties will be loaded dynamically here -->
+            </div>
 
-                <!-- Pediatria -->
-                <div class="specialty-card bg-green-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xl font-bold">Pediatria</h4>
-                        <div class="text-3xl">👶</div>
-                    </div>
-                    <p class="text-sm opacity-90 mb-4">Cuidados médicos para crianças e adolescentes</p>
-                    <div class="flex items-center justify-between text-sm mb-2">
-                        <span>⏱️ 23 min de espera</span>
-                        <span>👨‍⚕️ 2 médicos online</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex text-yellow-400">
-                            <span>★★★★★</span>
-                            <span class="text-white ml-1 text-xs">4.8 (890 avaliações)</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-right">
-                        <span class="text-2xl font-bold">R$ 79,90</span>
-                    </div>
-                </div>
-
-                <!-- Dermatologia -->
-                <div class="specialty-card bg-orange-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xl font-bold">Dermatologia</h4>
-                        <div class="text-3xl">🧴</div>
-                    </div>
-                    <p class="text-sm opacity-90 mb-4">Cuidados com a pele, cabelos e unhas</p>
-                    <div class="flex items-center justify-between text-sm mb-2">
-                        <span>⏱️ 18 min de espera</span>
-                        <span>👨‍⚕️ 4 médicos online</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex text-yellow-400">
-                            <span>★★★★★</span>
-                            <span class="text-white ml-1 text-xs">4.7 (654 avaliações)</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-right">
-                        <span class="text-2xl font-bold">R$ 99,90</span>
-                    </div>
-                </div>
-
-                <!-- Psiquiatria -->
-                <div class="specialty-card bg-purple-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xl font-bold">Psiquiatria</h4>
-                        <div class="text-3xl">🧠</div>
-                    </div>
-                    <p class="text-sm opacity-90 mb-4">Saúde mental e transtornos psiquiátricos</p>
-                    <div class="flex items-center justify-between text-sm mb-2">
-                        <span>⏱️ 7 min de espera</span>
-                        <span>👨‍⚕️ 19 médicos online</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex text-yellow-400">
-                            <span>★★★★★</span>
-                            <span class="text-white ml-1 text-xs">4.9 (2.1k avaliações)</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-right">
-                        <span class="text-2xl font-bold">R$ 129,90</span>
-                    </div>
-                </div>
-
-                <!-- Ginecologia -->
-                <div class="specialty-card bg-blue-500 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xl font-bold">Ginecologia</h4>
-                        <div class="text-3xl">👩</div>
-                    </div>
-                    <p class="text-sm opacity-90 mb-4">Saúde da mulher e sistema reprodutivo</p>
-                    <div class="flex items-center justify-between text-sm mb-2">
-                        <span>⏱️ 7 min de espera</span>
-                        <span>👨‍⚕️ 8 médicos online</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex text-yellow-400">
-                            <span>★★★★★</span>
-                            <span class="text-white ml-1 text-xs">4.8 (1.5k avaliações)</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-right">
-                        <span class="text-2xl font-bold">R$ 89,90</span>
-                    </div>
-                </div>
-
-                <!-- Neurologia -->
-                <div class="specialty-card bg-gray-600 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xl font-bold">Neurologia</h4>
-                        <div class="text-3xl">🧠</div>
-                    </div>
-                    <p class="text-sm opacity-90 mb-4">Sistema nervoso e transtornos neurológicos</p>
-                    <div class="flex items-center justify-between text-sm mb-2">
-                        <span>⏱️ 15 min de espera</span>
-                        <span>👨‍⚕️ 21 médicos online</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex text-yellow-400">
-                            <span>★★★★★</span>
-                            <span class="text-white ml-1 text-xs">4.6 (432 avaliações)</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-right">
-                        <span class="text-2xl font-bold">R$ 139,90</span>
-                    </div>
-                </div>
-
-                <!-- Ortopedia -->
-                <div class="specialty-card bg-gray-700 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xl font-bold">Ortopedia</h4>
-                        <div class="text-3xl">🦴</div>
-                    </div>
-                    <p class="text-sm opacity-90 mb-4">Ossos, articulações e sistema músculo-esquelético</p>
-                    <div class="flex items-center justify-between text-sm mb-2">
-                        <span>⏱️ 14 min de espera</span>
-                        <span>👨‍⚕️ 21 médicos online</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex text-yellow-400">
-                            <span>★★★★★</span>
-                            <span class="text-white ml-1 text-xs">4.5 (789 avaliações)</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-right">
-                        <span class="text-2xl font-bold">R$ 109,90</span>
-                    </div>
-                </div>
-
-                <!-- Endocrinologia -->
-                <div class="specialty-card bg-red-600 text-white p-6 rounded-xl shadow-lg cursor-pointer" onclick="redirectToAuth()">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xl font-bold">Endocrinologia</h4>
-                        <div class="text-3xl">🔬</div>
-                    </div>
-                    <p class="text-sm opacity-90 mb-4">Hormônios, metabolismo e glândulas endócrinas</p>
-                    <div class="flex items-center justify-between text-sm mb-2">
-                        <span>⏱️ 20 min de espera</span>
-                        <span>👨‍⚕️ 14 médicos online</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex text-yellow-400">
-                            <span>★★★★★</span>
-                            <span class="text-white ml-1 text-xs">4.7 (567 avaliações)</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-right">
-                        <span class="text-2xl font-bold">R$ 119,90</span>
-                    </div>
-                </div>
+            <!-- Empty State -->
+            <div id="emptySpecialties" class="text-center py-12 hidden">
+                <div class="text-6xl mb-4">🏥</div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Nenhuma especialidade disponível</h3>
+                <p class="text-gray-600">As especialidades serão carregadas em breve.</p>
             </div>
         </div>
     </section>
@@ -337,19 +423,20 @@
     <!-- Features Section -->
     <section class="bg-white py-16">
         <div class="max-w-7xl mx-auto px-4">
-            <h3 class="text-4xl font-bold text-center text-gray-900 mb-12">Por que escolher TeleMed?</h3>
+            <h3 class="scroll-reveal fade-in text-4xl font-bold text-center text-gray-900 mb-12" data-delay="0">Por que
+                escolher TeleMed?</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="text-center p-8 bg-gray-50 rounded-xl shadow-lg animate-slide-up">
+                <div class="scroll-reveal slide-up text-center p-8 bg-gray-50 rounded-xl shadow-lg" data-delay="0">
                     <div class="text-6xl mb-6">🎥</div>
                     <h4 class="text-2xl font-bold text-gray-900 mb-4">Videochamadas HD</h4>
                     <p class="text-gray-600 text-lg">Consultas por vídeo com qualidade profissional</p>
                 </div>
-                <div class="text-center p-8 bg-gray-50 rounded-xl shadow-lg animate-slide-up" style="animation-delay: 0.1s;">
+                <div class="scroll-reveal slide-up text-center p-8 bg-gray-50 rounded-xl shadow-lg" data-delay="200">
                     <div class="text-6xl mb-6">💊</div>
                     <h4 class="text-2xl font-bold text-gray-900 mb-4">Prescrição Digital</h4>
                     <p class="text-gray-600 text-lg">Receitas médicas digitais válidas</p>
                 </div>
-                <div class="text-center p-8 bg-gray-50 rounded-xl shadow-lg animate-slide-up" style="animation-delay: 0.2s;">
+                <div class="scroll-reveal slide-up text-center p-8 bg-gray-50 rounded-xl shadow-lg" data-delay="400">
                     <div class="text-6xl mb-6">📱</div>
                     <h4 class="text-2xl font-bold text-gray-900 mb-4">Disponível 24/7</h4>
                     <p class="text-gray-600 text-lg">Atendimento médico a qualquer hora</p>
@@ -361,12 +448,55 @@
     <!-- CTA Section -->
     <section class="bg-primary-600 text-white py-16">
         <div class="max-w-4xl mx-auto px-4 text-center">
-            <h3 class="text-4xl font-bold mb-6">Pronto para começar?</h3>
-            <p class="text-xl mb-8 opacity-90">Cadastre-se agora e tenha acesso a consultas médicas de qualidade</p>
-            <button onclick="redirectToAuth()" 
-                    class="bg-white text-primary-600 px-12 py-4 rounded-full font-bold text-xl hover:bg-gray-100 transition-all transform hover:scale-105">
+            <h3 class="scroll-reveal fade-in text-4xl font-bold mb-6" data-delay="0">Pronto para começar?</h3>
+            <p class="scroll-reveal slide-up text-xl mb-8 opacity-90" data-delay="200">Cadastre-se agora e tenha acesso
+                a consultas médicas de qualidade</p>
+            <button onclick="redirectToAuth()"
+                class="scroll-reveal zoom-in bg-white text-primary-600 px-12 py-4 rounded-full font-bold text-xl hover:bg-gray-100 transition-all transform hover:scale-105"
+                data-delay="400">
                 Cadastrar Agora
             </button>
+        </div>
+    </section>
+
+    <!-- Teste de Scroll Reveal - Seção Demonstrativa -->
+    <section class="bg-gray-100 py-20">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h2 class="scroll-reveal flip-x text-5xl font-bold text-gray-900 mb-8" data-delay="0">🎬 Scroll Reveal em
+                Ação!</h2>
+            <p class="scroll-reveal slide-right text-xl text-gray-600 mb-12" data-delay="200">Role a página para ver as
+                animações acontecerem</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div class="scroll-reveal slide-up bg-red-500 text-white p-8 rounded-xl shadow-lg" data-delay="0">
+                    <div class="text-4xl mb-4">🚀</div>
+                    <h3 class="text-xl font-bold">Slide Up</h3>
+                    <p>Desliza de baixo para cima</p>
+                </div>
+                <div class="scroll-reveal zoom-in bg-green-500 text-white p-8 rounded-xl shadow-lg" data-delay="200">
+                    <div class="text-4xl mb-4">🎯</div>
+                    <h3 class="text-xl font-bold">Zoom In</h3>
+                    <p>Aumenta de tamanho</p>
+                </div>
+                <div class="scroll-reveal bounce-in bg-blue-500 text-white p-8 rounded-xl shadow-lg" data-delay="400">
+                    <div class="text-4xl mb-4">⚡</div>
+                    <h3 class="text-xl font-bold">Bounce In</h3>
+                    <p>Efeito de pulo</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="scroll-reveal slide-left bg-purple-500 text-white p-8 rounded-xl shadow-lg" data-delay="0">
+                    <div class="text-4xl mb-4">👈</div>
+                    <h3 class="text-xl font-bold">Slide Left</h3>
+                    <p>Desliza da direita para esquerda</p>
+                </div>
+                <div class="scroll-reveal flip-y bg-orange-500 text-white p-8 rounded-xl shadow-lg" data-delay="300">
+                    <div class="text-4xl mb-4">🔄</div>
+                    <h3 class="text-xl font-bold">Flip Y</h3>
+                    <p>Rotaciona no eixo Y</p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -424,12 +554,43 @@
 
         // Função para scroll suave até especialidades
         function scrollToSpecialties() {
-            document.getElementById('specialties').scrollIntoView({ 
-                behavior: 'smooth' 
+            document.getElementById('specialties').scrollIntoView({
+                behavior: 'smooth'
             });
         }
 
-        // Animações ao scroll
+        // Sistema completo de Scroll Reveal - Contínuo
+        function initScrollReveal() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const element = entry.target;
+                    const delay = element.dataset.delay || 0;
+
+                    if (entry.isIntersecting) {
+                        // Elemento entrou na viewport - mostrar com animação
+                        setTimeout(() => {
+                            element.classList.add('revealed');
+                        }, parseInt(delay));
+                    } else {
+                        // Elemento saiu da viewport - esconder para animar novamente
+                        element.classList.remove('revealed');
+                    }
+                });
+            }, observerOptions);
+
+            // Observar todos os elementos com scroll-reveal
+            const revealElements = document.querySelectorAll('.scroll-reveal');
+            revealElements.forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Animações ao scroll (sistema antigo para compatibilidade)
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -50px 0px'
@@ -443,25 +604,638 @@
             });
         }, observerOptions);
 
-        // Observar elementos com animação
+        // Carregar especialidades do banco de dados
+        let specialties = [];
+
+        async function loadSpecialties() {
+            try {
+                console.log('🏥 Carregando especialidades do banco de dados...');
+
+                const { data, error } = await supabase
+                    .from('specialties')
+                    .select('id, name, description, icon, price, duration, is_active')
+                    .eq('is_active', true)
+                    .order('name');
+
+                if (error) {
+                    console.error('❌ Erro ao carregar especialidades:', error);
+                    showEmptyState();
+                    return;
+                }
+
+                specialties = data || [];
+                console.log(`✅ Carregadas ${specialties.length} especialidades`);
+
+                if (specialties.length === 0) {
+                    showEmptyState();
+                } else {
+                    renderSpecialties(specialties);
+                }
+
+            } catch (error) {
+                console.error('❌ Erro na conexão:', error);
+                showEmptyState();
+            }
+        }
+
+        function renderSpecialties(data) {
+            const grid = document.getElementById('specialtiesGrid');
+            const loading = document.getElementById('loadingSpecialties');
+            const empty = document.getElementById('emptySpecialties');
+
+            // Esconder loading
+            loading.classList.add('hidden');
+            empty.classList.add('hidden');
+            grid.classList.remove('hidden');
+
+            // Cores para os cards (rotação de cores para hover)
+            const colors = [
+                'red-500', 'green-500', 'blue-500', 'purple-500',
+                'orange-500', 'pink-500', 'indigo-500', 'teal-500'
+            ];
+
+            grid.innerHTML = data.map((specialty, index) => {
+                const hoverColor = colors[index % colors.length];
+                const waitTime = specialty.duration ? `${specialty.duration} min` : '~10 min';
+                const doctorsOnline = Math.floor(Math.random() * 30) + 1; // Simulado
+                const rating = (4.5 + Math.random() * 0.4).toFixed(1); // Simulado
+                const reviews = Math.floor(Math.random() * 2000) + 100; // Simulado
+                const delay = index * 100; // Delay escalonado para cada card
+
+                return `
+                    <div class="scroll-reveal slide-up specialty-card bg-white text-gray-800 p-6 rounded-xl shadow-lg cursor-pointer border border-gray-200 hover:border-transparent transition-all duration-300" 
+                         data-hover-color="${hoverColor}"
+                         data-delay="${delay}"
+                         onclick="selectSpecialty('${specialty.id}', '${specialty.name}', ${specialty.price})">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-xl font-bold specialty-title">${specialty.name}</h4>
+                            <div class="text-3xl specialty-icon">${specialty.icon}</div>
+                        </div>
+                        <p class="text-sm opacity-70 mb-4 specialty-description">${specialty.description}</p>
+                        <div class="flex items-center justify-between text-sm mb-2 specialty-info">
+                            <span>⏱️ ${waitTime} de espera</span>
+                            <span>👨‍⚕️ ${doctorsOnline} médicos online</span>
+                        </div>
+                        <div class="flex items-center justify-between specialty-rating">
+                            <div class="flex text-yellow-400">
+                                <span>★★★★★</span>
+                                <span class="text-gray-600 ml-1 text-xs rating-text">${rating} (${reviews} avaliações)</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-right">
+                            <span class="text-2xl font-bold specialty-price text-green-600">R$ ${parseFloat(specialty.price).toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Adicionar efeitos de hover aos novos cards
+            addHoverEffects();
+
+            // Re-inicializar scroll reveal para os novos elementos
+            setTimeout(() => {
+                initScrollReveal();
+            }, 100);
+        }
+
+        function showEmptyState() {
+            const grid = document.getElementById('specialtiesGrid');
+            const loading = document.getElementById('loadingSpecialties');
+            const empty = document.getElementById('emptySpecialties');
+
+            loading.classList.add('hidden');
+            grid.classList.add('hidden');
+            empty.classList.remove('hidden');
+        }
+
+        function addHoverEffects() {
+            document.querySelectorAll('.specialty-card').forEach(card => {
+                const hoverColor = card.dataset.hoverColor;
+
+                card.addEventListener('mouseenter', () => {
+                    // Transformação e sombra com ZOOM MAIOR
+                    card.style.transform = 'translateY(-12px) scale(1.08)';
+                    card.style.boxShadow = '0 30px 60px -12px rgba(0, 0, 0, 0.35)';
+                    card.style.zIndex = '10';
+
+                    // Mudar cor de fundo e texto
+                    card.classList.remove('bg-white', 'text-gray-800');
+                    card.classList.add(`bg-${hoverColor}`, 'text-white');
+
+                    // Ajustar opacidade da descrição
+                    const description = card.querySelector('.specialty-description');
+                    if (description) {
+                        description.classList.remove('opacity-70');
+                        description.classList.add('opacity-90');
+                    }
+
+                    // Ajustar cor do texto de avaliação
+                    const ratingText = card.querySelector('.rating-text');
+                    if (ratingText) {
+                        ratingText.classList.remove('text-gray-600');
+                        ratingText.classList.add('text-white');
+                    }
+
+                    // Ajustar cor do preço
+                    const price = card.querySelector('.specialty-price');
+                    if (price) {
+                        price.classList.remove('text-green-600');
+                        price.classList.add('text-white');
+                    }
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    // Voltar transformação
+                    card.style.transform = 'translateY(0) scale(1)';
+
+                    // Voltar cores originais
+                    card.classList.remove(`bg-${hoverColor}`, 'text-white');
+                    card.classList.add('bg-white', 'text-gray-800');
+
+                    // Voltar opacidade da descrição
+                    const description = card.querySelector('.specialty-description');
+                    if (description) {
+                        description.classList.remove('opacity-90');
+                        description.classList.add('opacity-70');
+                    }
+
+                    // Voltar cor do texto de avaliação
+                    const ratingText = card.querySelector('.rating-text');
+                    if (ratingText) {
+                        ratingText.classList.remove('text-white');
+                        ratingText.classList.add('text-gray-600');
+                    }
+
+                    // Voltar cor do preço
+                    const price = card.querySelector('.specialty-price');
+                    if (price) {
+                        price.classList.remove('text-white');
+                        price.classList.add('text-green-600');
+                    }
+                });
+            });
+        }
+
+        function selectSpecialty(id, name, price) {
+            console.log(`Especialidade selecionada: ${name} (ID: ${id}) - R$ ${price}`);
+            
+            // Buscar dados completos da especialidade
+            const specialty = specialties.find(s => s.id === id);
+            if (specialty) {
+                openSpecialtyModal(specialty);
+            } else {
+                console.error('Especialidade não encontrada');
+            }
+        }
+
+        // Função de busca
+        function setupSearch() {
+            const searchInput = document.querySelector('input[placeholder*="Buscar especialidade"]');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    const filtered = specialties.filter(specialty =>
+                        specialty.name.toLowerCase().includes(query) ||
+                        specialty.description.toLowerCase().includes(query)
+                    );
+                    renderSpecialties(filtered);
+                });
+            }
+        }
+
+        // Inicializar quando a página carregar
         document.addEventListener('DOMContentLoaded', () => {
+            loadSpecialties();
+            setupSearch();
+            initScrollReveal();
+
             const animatedElements = document.querySelectorAll('.animate-slide-up, .animate-bounce-in');
             animatedElements.forEach(el => {
                 el.style.animationPlayState = 'paused';
                 observer.observe(el);
             });
         });
+    </script>
 
-        // Efeito de hover nos cards de especialidade
-        document.querySelectorAll('.specialty-card').forEach(card => {
-            card.addEventListener('mouseenter', () => {
-                card.style.transform = 'translateY(-8px) scale(1.02)';
-            });
+    <!-- Modal de Especialidade -->
+    <div id="specialtyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <!-- Header do Modal -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span id="modalSpecialtyIcon" class="text-4xl mr-4">🏥</span>
+                        <div>
+                            <h2 id="modalSpecialtyName" class="text-2xl font-bold text-gray-900">Especialidade</h2>
+                            <p class="text-gray-600">Consulta médica online</p>
+                        </div>
+                    </div>
+                    <button onclick="closeSpecialtyModal()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+                </div>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6">
+                <!-- Descrição da Especialidade -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-3">📋 Sobre esta Especialidade</h3>
+                    <p id="modalSpecialtyDescription" class="text-gray-700 leading-relaxed">
+                        Descrição da especialidade médica...
+                    </p>
+                </div>
+
+                <!-- Como Funciona o Atendimento -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-3">🔄 Como Funciona o Atendimento</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 mt-0.5">1</div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Pagamento Seguro</h4>
+                                <p class="text-gray-600 text-sm">Efetue o pagamento da consulta de forma segura</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 mt-0.5">2</div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Fila de Espera</h4>
+                                <p class="text-gray-600 text-sm">Entre na fila e acompanhe sua posição em tempo real</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 mt-0.5">3</div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Notificação</h4>
+                                <p class="text-gray-600 text-sm">Receba notificação quando for sua vez</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 mt-0.5">4</div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Videoconsulta</h4>
+                                <p class="text-gray-600 text-sm">Consulta por vídeo com médico especialista</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informações da Consulta -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-3">📊 Informações da Consulta</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600" id="modalSpecialtyPrice">R$ 0,00</div>
+                            <div class="text-sm text-gray-600">Valor da Consulta</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="modalSpecialtyDuration">30 min</div>
+                            <div class="text-sm text-gray-600">Duração Média</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="modalDoctorsOnline">5</div>
+                            <div class="text-sm text-gray-600">Médicos Online</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-orange-600" id="modalWaitTime">~15 min</div>
+                            <div class="text-sm text-gray-600">Tempo de Espera</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="flex space-x-4">
+                    <button onclick="closeSpecialtyModal()" 
+                            class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button onclick="processPayment()" 
+                            class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                        💳 Efetuar Pagamento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Fila de Espera -->
+    <div id="queueModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl max-w-md w-full mx-4">
+            <div class="p-6 text-center">
+                <div class="text-6xl mb-4">⏳</div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Você está na Fila!</h2>
+                <p class="text-gray-600 mb-6">Seu pagamento foi aprovado. Aguarde sua vez para o atendimento.</p>
+                
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <div class="text-3xl font-bold text-blue-600" id="queuePosition">3</div>
+                    <div class="text-sm text-blue-800">Sua posição na fila</div>
+                    <div class="mt-2 text-sm text-gray-600">
+                        Tempo estimado: <span id="queueWaitTime" class="font-medium">15 minutos</span>
+                    </div>
+                </div>
+
+                <div class="text-sm text-gray-500">
+                    Você receberá uma notificação quando for sua vez
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Notificação de Consulta -->
+    <div id="consultationNotification" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl max-w-md w-full mx-4 text-center">
+            <div class="p-6">
+                <div class="text-6xl mb-4 animate-pulse">📞</div>
+                <h2 class="text-2xl font-bold text-green-600 mb-4">Sua Consulta Está Pronta!</h2>
+                <p class="text-gray-600 mb-4">O médico está aguardando você na sala de consulta.</p>
+                
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <p class="text-sm text-green-800">
+                        <strong>Médico:</strong> <span id="doctorName">Dr. João Silva</span><br>
+                        <strong>Especialidade:</strong> <span id="doctorSpecialty">Cardiologia</span><br>
+                        <strong>CRM:</strong> <span id="doctorCrm">12345-SP</span>
+                    </p>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button onclick="declineConsultation()" 
+                            class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        Não Posso Agora
+                    </button>
+                    <button onclick="startVideoCall()" 
+                            class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                        🎥 Entrar na Consulta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais para o fluxo
+        let currentSpecialty = null;
+        let currentAppointment = null;
+        let queueInterval = null;
+
+        // Abrir modal da especialidade
+        function openSpecialtyModal(specialty) {
+            currentSpecialty = specialty;
             
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = 'translateY(0) scale(1)';
-            });
+            // Preencher dados do modal
+            document.getElementById('modalSpecialtyIcon').textContent = specialty.icon;
+            document.getElementById('modalSpecialtyName').textContent = specialty.name;
+            document.getElementById('modalSpecialtyDescription').textContent = specialty.description;
+            document.getElementById('modalSpecialtyPrice').textContent = `R$ ${parseFloat(specialty.price).toFixed(2)}`;
+            document.getElementById('modalSpecialtyDuration').textContent = `${specialty.duration || 30} min`;
+            
+            // Dados simulados
+            const doctorsOnline = Math.floor(Math.random() * 10) + 1;
+            const waitTime = Math.floor(Math.random() * 20) + 5;
+            
+            document.getElementById('modalDoctorsOnline').textContent = doctorsOnline;
+            document.getElementById('modalWaitTime').textContent = `~${waitTime} min`;
+            
+            // Mostrar modal
+            document.getElementById('specialtyModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            console.log('Modal da especialidade aberto:', specialty.name);
+        }
+
+        // Fechar modal da especialidade
+        function closeSpecialtyModal() {
+            document.getElementById('specialtyModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            currentSpecialty = null;
+        }
+
+        // Processar pagamento (simulado)
+        async function processPayment() {
+            if (!currentSpecialty) return;
+
+            try {
+                console.log('Processando pagamento para:', currentSpecialty.name);
+                
+                // Fechar modal da especialidade
+                closeSpecialtyModal();
+                
+                // Simular processamento de pagamento
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+                loadingDiv.innerHTML = `
+                    <div class="bg-white rounded-xl p-8 text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                        <h3 class="text-lg font-bold text-gray-900">Processando Pagamento...</h3>
+                        <p class="text-gray-600">Aguarde um momento</p>
+                    </div>
+                `;
+                document.body.appendChild(loadingDiv);
+
+                // Simular delay do pagamento
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Remover loading
+                document.body.removeChild(loadingDiv);
+                
+                // Criar consulta simulada
+                currentAppointment = {
+                    id: 'apt_' + Date.now(),
+                    specialtyId: currentSpecialty.id,
+                    specialtyName: currentSpecialty.name,
+                    price: currentSpecialty.price,
+                    status: 'paid',
+                    queuePosition: Math.floor(Math.random() * 5) + 1
+                };
+                
+                console.log('Pagamento aprovado! Consulta criada:', currentAppointment.id);
+                
+                // Mostrar modal de fila
+                showQueueModal();
+                
+                // Iniciar simulação da fila
+                startQueueSimulation();
+                
+            } catch (error) {
+                console.error('Erro no pagamento:', error);
+                alert('Erro ao processar pagamento. Tente novamente.');
+            }
+        }
+
+        // Mostrar modal de fila
+        function showQueueModal() {
+            if (!currentAppointment) return;
+            
+            document.getElementById('queuePosition').textContent = currentAppointment.queuePosition;
+            document.getElementById('queueWaitTime').textContent = `${currentAppointment.queuePosition * 5} minutos`;
+            
+            document.getElementById('queueModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            console.log('Modal de fila exibido. Posição:', currentAppointment.queuePosition);
+        }
+
+        // Iniciar simulação da fila
+        function startQueueSimulation() {
+            if (!currentAppointment) return;
+            
+            let position = currentAppointment.queuePosition;
+            
+            queueInterval = setInterval(() => {
+                position--;
+                
+                if (position <= 0) {
+                    // Chegou a vez do usuário
+                    clearInterval(queueInterval);
+                    document.getElementById('queueModal').classList.add('hidden');
+                    showConsultationNotification();
+                } else {
+                    // Atualizar posição na fila
+                    document.getElementById('queuePosition').textContent = position;
+                    document.getElementById('queueWaitTime').textContent = `${position * 5} minutos`;
+                    currentAppointment.queuePosition = position;
+                    
+                    console.log('Posição na fila atualizada:', position);
+                }
+            }, 3000); // Atualizar a cada 3 segundos para demonstração
+        }
+
+        // Mostrar notificação de consulta pronta
+        function showConsultationNotification() {
+            // Dados simulados do médico
+            const doctors = [
+                { name: 'Dr. João Silva', specialty: currentSpecialty?.name || 'Medicina Geral', crm: '12345-SP' },
+                { name: 'Dra. Maria Santos', specialty: currentSpecialty?.name || 'Medicina Geral', crm: '67890-RJ' },
+                { name: 'Dr. Pedro Costa', specialty: currentSpecialty?.name || 'Medicina Geral', crm: '11111-MG' },
+                { name: 'Dra. Ana Oliveira', specialty: currentSpecialty?.name || 'Medicina Geral', crm: '22222-RS' }
+            ];
+            
+            const randomDoctor = doctors[Math.floor(Math.random() * doctors.length)];
+            
+            // Preencher dados do médico
+            document.getElementById('doctorName').textContent = randomDoctor.name;
+            document.getElementById('doctorSpecialty').textContent = randomDoctor.specialty;
+            document.getElementById('doctorCrm').textContent = randomDoctor.crm;
+            
+            // Mostrar notificação
+            document.getElementById('consultationNotification').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Tocar som de notificação (se possível)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+                audio.play().catch(() => {}); // Ignorar erros de autoplay
+            } catch (error) {
+                console.log('Som de notificação não disponível');
+            }
+            
+            console.log('Notificação de consulta exibida. Médico:', randomDoctor.name);
+        }
+
+        // Iniciar videochamada
+        function startVideoCall() {
+            if (!currentAppointment) return;
+            
+            try {
+                console.log('Iniciando videochamada...');
+                
+                // Fechar notificação
+                document.getElementById('consultationNotification').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                
+                // Gerar nome da sala
+                const roomName = `consultation-${currentAppointment.id}`;
+                
+                // Abrir Jitsi Meet em nova aba
+                const jitsiUrl = `https://8x8.vc/${roomName}`;
+                const videoWindow = window.open(jitsiUrl, '_blank', 'width=1200,height=800');
+                
+                if (videoWindow) {
+                    console.log('Videochamada aberta:', roomName);
+                    
+                    // Mostrar confirmação
+                    const confirmationDiv = document.createElement('div');
+                    confirmationDiv.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50';
+                    confirmationDiv.innerHTML = `
+                        <div class="flex items-center">
+                            <span class="text-xl mr-2">✅</span>
+                            <div>
+                                <div class="font-bold">Videochamada Iniciada!</div>
+                                <div class="text-sm opacity-90">Sala: ${roomName}</div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(confirmationDiv);
+                    
+                    // Remover confirmação após 5 segundos
+                    setTimeout(() => {
+                        if (document.body.contains(confirmationDiv)) {
+                            document.body.removeChild(confirmationDiv);
+                        }
+                    }, 5000);
+                    
+                } else {
+                    throw new Error('Não foi possível abrir a videochamada. Verifique se pop-ups estão bloqueados.');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao iniciar videochamada:', error);
+                alert('Erro ao iniciar videochamada: ' + error.message);
+            }
+        }
+
+        // Recusar consulta
+        function declineConsultation() {
+            if (confirm('Tem certeza que não pode atender agora? Você perderá sua posição na fila.')) {
+                document.getElementById('consultationNotification').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                
+                // Limpar dados
+                currentAppointment = null;
+                currentSpecialty = null;
+                
+                if (queueInterval) {
+                    clearInterval(queueInterval);
+                    queueInterval = null;
+                }
+                
+                console.log('Consulta recusada pelo usuário');
+                
+                // Mostrar mensagem
+                alert('Consulta cancelada. Você pode agendar uma nova consulta a qualquer momento.');
+            }
+        }
+
+        // Função selectSpecialty modificada
+        function selectSpecialty(id, name, price) {
+            console.log(`Especialidade selecionada: ${name} (ID: ${id}) - R$ ${price}`);
+            
+            // Buscar dados completos da especialidade
+            const specialty = specialties.find(s => s.id === id);
+            if (specialty) {
+                openSpecialtyModal(specialty);
+            } else {
+                console.error('Especialidade não encontrada');
+            }
+        }
+
+        // Limpar intervalos ao sair da página
+        window.addEventListener('beforeunload', () => {
+            if (queueInterval) {
+                clearInterval(queueInterval);
+            }
+        });
+
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSpecialties();
+            setupSearch();
+            initScrollReveal();
         });
     </script>
+
+    <!-- Scripts do Sistema de Pagamentos e Videochamada -->
+    <script src="js/payments.js"></script>
+    <script src="js/queue.js"></script>
+    <script src="js/videocall.js"></script>
 </body>
+
 </html>

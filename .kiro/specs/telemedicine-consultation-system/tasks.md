@@ -32,7 +32,15 @@
   - Configurar criação automática de perfil médico após aprovação
   - _Requirements: Conformidade legal CFM, processo de verificação_
 
-- [ ] 3. Implementar sistema base de especialidades médicas
+- [x] 3. Implementar sistema base de especialidades médicas
+
+
+
+
+
+
+
+
   - Criar componente de renderização de cards de especialidades
   - Implementar sistema de busca e filtros em tempo real
   - Desenvolver modal de detalhes da especialidade com informações completas
@@ -40,7 +48,10 @@
   - Adicionar indicadores visuais de disponibilidade (médicos online)
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 4. Desenvolver sistema de agendamento de consultas
+- [x] 4. Desenvolver sistema de agendamento de consultas
+
+
+
   - Criar interface de seleção de data e horário
   - Implementar validação de disponibilidade de médicos
   - Desenvolver formulário de sintomas e informações da consulta
@@ -48,7 +59,10 @@
   - Adicionar confirmação visual do agendamento
   - _Requirements: 1.5, 2.1, 8.1_
 
-- [ ] 5. Implementar sistema de pagamentos seguro
+- [x] 5. Implementar sistema de pagamentos seguro
+
+
+
   - Integrar gateway de pagamento para processamento de cartões
   - Criar modal de pagamento com validação de campos obrigatórios
   - Implementar geração de ID único de consulta após pagamento

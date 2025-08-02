@@ -1,6 +1,25 @@
-# Testes Unitários - Sistema de Cadastro e Aprovação de Médicos
+# Testes Unitários - TeleMed (Organizados por Tarefa)
 
-Este diretório contém os testes unitários para a **Tarefa 2** do sistema de telemedicina: "Implementar sistema de cadastro e aprovação de médicos".
+Este diretório contém os testes unitários organizados por tarefa para o sistema de telemedicina TeleMed.
+
+## 📋 Estrutura por Tarefa
+
+### Tarefa 1 - Sistema de Autenticação
+- Testes de validação de formulários de login/cadastro
+- Testes de integração com Supabase Auth
+- Testes de gerenciamento de sessão
+
+### Tarefa 2 - Sistema de Cadastro e Aprovação de Médicos
+- `doctor-form-validation.test.js` - Testes de validação do formulário
+- `doctor-registration.test.js` - Testes do processo de registro
+- Testes de workflow de aprovação
+
+### Tarefa 3 - Sistema de Especialidades Médicas
+- `task3-specialties.test.js` - Testes do sistema de especialidades
+- Testes de renderização de cards
+- Testes de busca e filtros
+- Testes de modal de detalhes
+- Testes de disponibilidade de médicos
 
 ## 📋 Cobertura dos Testes
 

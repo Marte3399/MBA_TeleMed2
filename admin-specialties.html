@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleMed - Administração de Especialidades</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <style>
+        .modal {
+            display: none;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .specialty-card {
+            transition: all 0.3s ease;
+        }
+
+        .specialty-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Administração de Especialidades</h1>
+                    <p class="text-gray-600 mt-1">Gerencie as especialidades médicas da plataforma</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="window.location.href='index.html'"
+                        class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                        🏠 Voltar ao Sistema
+                    </button>
+                    <button onclick="openAddModal()"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        ➕ Nova Especialidade
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Cards -->
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        🏥
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total de Especialidades</p>
+                        <p id="totalSpecialties" class="text-2xl font-semibold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        ✅
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Ativas</p>
+                        <p id="activeSpecialties" class="text-2xl font-semibold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        ⏸️
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Inativas</p>
+                        <p id="inactiveSpecialties" class="text-2xl font-semibold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        💰
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Preço Médio</p>
+                        <p id="averagePrice" class="text-2xl font-semibold text-gray-900">R$ 0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <input type="text" id="searchInput" placeholder="Buscar especialidades..."
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        oninput="searchSpecialties()">
+                </div>
+                <div class="flex gap-2">
+                    <select id="statusFilter" onchange="filterSpecialties()"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">Todos os Status</option>
+                        <option value="active">Ativas</option>
+                        <option value="inactive">Inativas</option>
+                    </select>
+                    <select id="sortBy" onchange="sortSpecialties()"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="name">Ordenar por Nome</option>
+                        <option value="price">Ordenar por Preço</option>
+                        <option value="created_at">Ordenar por Data</option>
+                    </select>
+                    <button onclick="refreshSpecialties()"
+                        class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                        🔄 Atualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Specialties Grid -->
+        <div id="specialtiesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Specialties will be loaded here -->
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="mt-2 text-gray-600">Carregando especialidades...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12 hidden">
+            <div class="text-6xl mb-4">🏥</div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Nenhuma especialidade encontrada</h3>
+            <p class="text-gray-600 mb-4">Comece criando sua primeira especialidade médica</p>
+            <button onclick="openAddModal()"
+                class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                ➕ Criar Primeira Especialidade
+            </button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="specialtyModal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h2 id="modalTitle" class="text-xl font-semibold text-gray-900">Nova Especialidade</h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <form id="specialtyForm" class="p-6 space-y-6">
+                <input type="hidden" id="specialtyId">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Nome da
+                            Especialidade*</label>
+                        <input type="text" id="name" name="name" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Ex: Cardiologia">
+                    </div>
+
+                    <div>
+                        <label for="icon" class="block text-sm font-medium text-gray-700 mb-2">Ícone/Emoji*</label>
+                        <div class="relative">
+                            <button type="button" id="iconSelector" onclick="toggleIconDropdown()"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span id="selectedIcon" class="text-2xl mr-2">❤️</span>
+                                    <span id="selectedIconName" class="text-gray-700">Coração</span>
+                                </div>
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <input type="hidden" id="icon" name="icon" value="❤️" required>
+                            
+                            <!-- Dropdown Menu -->
+                            <div id="iconDropdown" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg hidden max-h-96 overflow-y-auto">
+                                <!-- Search Box -->
+                                <div class="p-3 border-b">
+                                    <input type="text" id="iconSearch" placeholder="Buscar ícone..."
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        oninput="filterIcons()">
+                                </div>
+                                
+                                <!-- Icon Categories -->
+                                <div id="iconCategories" class="p-2">
+                                    <!-- Medical Specialties -->
+                                    <div class="icon-category mb-4">
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-2 px-2">Especialidades Médicas</h4>
+                                        <div class="grid grid-cols-4 gap-3">
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="❤️" data-name="Cardiologia">
+                                                <div class="text-2xl">❤️</div>
+                                                <div class="text-xs text-gray-600 mt-1">Cardio</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🧠" data-name="Neurologia">
+                                                <div class="text-2xl">🧠</div>
+                                                <div class="text-xs text-gray-600 mt-1">Neuro</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="👁️" data-name="Oftalmologia">
+                                                <div class="text-2xl">👁️</div>
+                                                <div class="text-xs text-gray-600 mt-1">Oftalmo</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🦷" data-name="Odontologia">
+                                                <div class="text-2xl">🦷</div>
+                                                <div class="text-xs text-gray-600 mt-1">Odonto</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🦴" data-name="Ortopedia">
+                                                <div class="text-2xl">🦴</div>
+                                                <div class="text-xs text-gray-600 mt-1">Ortopedia</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🫁" data-name="Pneumologia">
+                                                <div class="text-2xl">🫁</div>
+                                                <div class="text-xs text-gray-600 mt-1">Pneumo</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🧴" data-name="Dermatologia">
+                                                <div class="text-2xl">🧴</div>
+                                                <div class="text-xs text-gray-600 mt-1">Dermato</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="👶" data-name="Pediatria">
+                                                <div class="text-2xl">👶</div>
+                                                <div class="text-xs text-gray-600 mt-1">Pediatria</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🤰" data-name="Ginecologia">
+                                                <div class="text-2xl">🤰</div>
+                                                <div class="text-xs text-gray-600 mt-1">Gineco</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🧓" data-name="Geriatria">
+                                                <div class="text-2xl">🧓</div>
+                                                <div class="text-xs text-gray-600 mt-1">Geriatria</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🩺" data-name="Clínica Geral">
+                                                <div class="text-2xl">🩺</div>
+                                                <div class="text-xs text-gray-600 mt-1">Geral</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🔬" data-name="Patologia">
+                                                <div class="text-2xl">🔬</div>
+                                                <div class="text-xs text-gray-600 mt-1">Patologia</div>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Medical Equipment -->
+                                    <div class="icon-category mb-4">
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-2 px-2">Equipamentos Médicos</h4>
+                                        <div class="grid grid-cols-4 gap-3">
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="💊" data-name="Medicamentos">
+                                                <div class="text-2xl">💊</div>
+                                                <div class="text-xs text-gray-600 mt-1">Remédios</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="💉" data-name="Vacinas">
+                                                <div class="text-2xl">💉</div>
+                                                <div class="text-xs text-gray-600 mt-1">Vacinas</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🌡️" data-name="Termômetro">
+                                                <div class="text-2xl">🌡️</div>
+                                                <div class="text-xs text-gray-600 mt-1">Temp</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🩹" data-name="Curativos">
+                                                <div class="text-2xl">🩹</div>
+                                                <div class="text-xs text-gray-600 mt-1">Curativos</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🏥" data-name="Hospital">
+                                                <div class="text-2xl">🏥</div>
+                                                <div class="text-xs text-gray-600 mt-1">Hospital</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🚑" data-name="Emergência">
+                                                <div class="text-2xl">🚑</div>
+                                                <div class="text-xs text-gray-600 mt-1">Emergência</div>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Health & Wellness -->
+                                    <div class="icon-category mb-4">
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-2 px-2">Saúde & Bem-estar</h4>
+                                        <div class="grid grid-cols-4 gap-3">
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🧘" data-name="Psicologia">
+                                                <div class="text-2xl">🧘</div>
+                                                <div class="text-xs text-gray-600 mt-1">Psicologia</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="💪" data-name="Fisioterapia">
+                                                <div class="text-2xl">💪</div>
+                                                <div class="text-xs text-gray-600 mt-1">Fisio</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🥗" data-name="Nutrição">
+                                                <div class="text-2xl">🥗</div>
+                                                <div class="text-xs text-gray-600 mt-1">Nutrição</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🏃" data-name="Medicina Esportiva">
+                                                <div class="text-2xl">🏃</div>
+                                                <div class="text-xs text-gray-600 mt-1">Esporte</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="😴" data-name="Medicina do Sono">
+                                                <div class="text-2xl">😴</div>
+                                                <div class="text-xs text-gray-600 mt-1">Sono</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🌿" data-name="Medicina Natural">
+                                                <div class="text-2xl">🌿</div>
+                                                <div class="text-xs text-gray-600 mt-1">Natural</div>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- General Icons -->
+                                    <div class="icon-category">
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-2 px-2">Ícones Gerais</h4>
+                                        <div class="grid grid-cols-4 gap-3">
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="⭐" data-name="Estrela">
+                                                <div class="text-2xl">⭐</div>
+                                                <div class="text-xs text-gray-600 mt-1">Estrela</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="✨" data-name="Brilho">
+                                                <div class="text-2xl">✨</div>
+                                                <div class="text-xs text-gray-600 mt-1">Brilho</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🔥" data-name="Fogo">
+                                                <div class="text-2xl">🔥</div>
+                                                <div class="text-xs text-gray-600 mt-1">Fogo</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="💎" data-name="Diamante">
+                                                <div class="text-2xl">💎</div>
+                                                <div class="text-xs text-gray-600 mt-1">Premium</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🎯" data-name="Alvo">
+                                                <div class="text-2xl">🎯</div>
+                                                <div class="text-xs text-gray-600 mt-1">Precisão</div>
+                                            </button>
+                                            <button type="button" class="icon-option p-3 hover:bg-blue-50 rounded-md text-center" data-icon="🛡️" data-name="Escudo">
+                                                <div class="text-2xl">🛡️</div>
+                                                <div class="text-xs text-gray-600 mt-1">Proteção</div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Descrição*</label>
+                    <textarea id="description" name="description" required rows="3"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Descrição detalhada da especialidade médica"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Preço (R$)*</label>
+                        <input type="number" id="price" name="price" required min="0" step="0.01"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="89.90">
+                    </div>
+
+                    <div>
+                        <label for="wait_time" class="block text-sm font-medium text-gray-700 mb-2">Tempo de Espera
+                            Estimado*</label>
+                        <input type="text" id="wait_time" name="wait_time" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="~8 min">
+                    </div>
+                </div>
+
+
+
+                <div class="flex items-center">
+                    <input type="checkbox" id="is_active" name="is_active" checked
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="is_active" class="ml-2 block text-sm text-gray-900">
+                        Especialidade ativa (visível para pacientes)
+                    </label>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-6 border-t">
+                    <button type="button" onclick="closeModal()"
+                        class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="submitBtn"
+                        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                        Salvar Especialidade
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                        ⚠️
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Confirmar Exclusão</h3>
+                        <p class="text-gray-600">Esta ação não pode ser desfeita.</p>
+                    </div>
+                </div>
+                <p class="text-gray-700 mb-6">
+                    Tem certeza que deseja excluir a especialidade <strong id="deleteSpecialtyName"></strong>?
+                </p>
+                <div class="flex justify-end gap-3">
+                    <button onclick="closeDeleteModal()"
+                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
+                        Cancelar
+                    </button>
+                    <button onclick="confirmDelete()" id="confirmDeleteBtn"
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                        Excluir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg border-l-4 p-4 max-w-sm">
+            <div class="flex items-center">
+                <div id="toastIcon" class="mr-3"></div>
+                <div>
+                    <p id="toastTitle" class="font-semibold"></p>
+                    <p id="toastMessage" class="text-sm text-gray-600"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-specialties.js"></script>
+</body>
+
+</html>

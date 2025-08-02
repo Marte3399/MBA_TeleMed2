@@ -140,8 +140,11 @@
 
         <!-- Applications List -->
         <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                 <h3 class="text-lg font-medium text-gray-900" id="tabTitle">Candidaturas Pendentes</h3>
+                <button onclick="loadApplications()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+                    🔄 Recarregar
+                </button>
             </div>
             <div class="p-6">
                 <div id="applicationsContainer">
@@ -183,43 +186,75 @@
 
         // Verificar autenticação ao carregar
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Painel administrativo carregado, iniciando...');
+            
             try {
+                console.log('🔐 Verificando autenticação...');
                 const authenticated = await requireAuth();
+                console.log('Autenticado:', authenticated);
+                
                 if (authenticated) {
+                    console.log('👤 Carregando candidaturas...');
                     await loadApplications();
-                    updateStats();
+                    console.log('✅ Inicialização concluída');
+                } else {
+                    console.log('❌ Usuário não autenticado');
                 }
             } catch (error) {
-                console.error('Erro na inicialização:', error);
+                console.error('❌ Erro na inicialização:', error);
             }
         });
 
         // Carregar candidaturas do banco
         async function loadApplications() {
             try {
+                console.log('🔄 Carregando candidaturas do banco...');
+                
                 const { data, error } = await supabase
                     .from('doctors_applications')
                     .select('*')
                     .order('submitted_at', { ascending: false });
 
+                console.log('Resposta do Supabase:', { data, error });
+
                 if (error) {
-                    console.error('Erro ao carregar candidaturas:', error);
+                    console.error('❌ Erro ao carregar candidaturas:', error);
+                    showError('Erro ao carregar candidaturas: ' + error.message);
                     return;
                 }
 
                 applications = data || [];
+                console.log('✅ Candidaturas carregadas:', applications.length);
+                console.log('Dados das candidaturas:', applications);
+                
                 displayApplications();
                 updateStats();
             } catch (error) {
-                console.error('Erro ao carregar candidaturas:', error);
+                console.error('❌ Erro geral ao carregar candidaturas:', error);
+                showError('Erro interno ao carregar candidaturas');
             }
+        }
+
+        // Mostrar erro na interface
+        function showError(message) {
+            const container = document.getElementById('applicationsContainer');
+            container.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="text-6xl mb-4">❌</div>
+                    <h3 class="text-2xl font-bold text-red-600 mb-2">Erro</h3>
+                    <p class="text-gray-600 mb-4">${message}</p>
+                    <button onclick="loadApplications()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                        Tentar novamente
+                    </button>
+                </div>
+            `;
         }
 
         // Exibir candidaturas baseado na aba atual
         function displayApplications() {
             const container = document.getElementById('applicationsContainer');
             const filteredApps = applications.filter(app => {
-                if (currentTab === 'pending') return app.application_status === 'pending';
+                if (currentTab === 'pending') return ['pending', 'under_review'].includes(app.application_status);
                 if (currentTab === 'approved') return app.application_status === 'approved';
                 if (currentTab === 'rejected') return app.application_status === 'rejected';
                 return true;
@@ -272,7 +307,7 @@
 
         // Atualizar estatísticas
         function updateStats() {
-            const pending = applications.filter(app => app.application_status === 'pending').length;
+            const pending = applications.filter(app => ['pending', 'under_review'].includes(app.application_status)).length;
             const approved = applications.filter(app => app.application_status === 'approved').length;
             const rejected = applications.filter(app => app.application_status === 'rejected').length;
             const total = applications.length;
@@ -458,6 +493,7 @@
         function getStatusColor(status) {
             switch (status) {
                 case 'pending': return 'bg-yellow-100 text-yellow-800';
+                case 'under_review': return 'bg-blue-100 text-blue-800';
                 case 'approved': return 'bg-green-100 text-green-800';
                 case 'rejected': return 'bg-red-100 text-red-800';
                 default: return 'bg-gray-100 text-gray-800';
@@ -467,6 +503,7 @@
         function getStatusText(status) {
             switch (status) {
                 case 'pending': return 'Pendente';
+                case 'under_review': return 'Em Análise';
                 case 'approved': return 'Aprovado';
                 case 'rejected': return 'Rejeitado';
                 default: return 'Desconhecido';

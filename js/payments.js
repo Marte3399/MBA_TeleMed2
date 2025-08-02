@@ -1,521 +1,438 @@
-// TeleMed - Sistema de Pagamentos
+// Sistema de Pagamentos Integrado com Jitsi Meet
+// Fluxo: Pagamento → Validação → Fila → Videoconsulta
 
-/**
- * CONFIGURAÇÃO DE PAGAMENTOS
- * Define métodos de pagamento disponíveis, taxas e configurações do sistema
- */
-const PAYMENT_CONFIG = {
-    methods: {                          // Métodos de pagamento disponíveis
-        pix: {                          // Configuração do PIX
-            name: 'PIX',                // Nome exibido para o usuário
-            icon: '📱',                 // Ícone representativo
-            processingTime: 'Instantâneo',  // Tempo de processamento
-            discount: 0.05,             // Desconto de 5% para PIX
-            enabled: true               // Se está habilitado
-        },
-        credit: {                       // Configuração do Cartão de Crédito
-            name: 'Cartão de Crédito',
-            icon: '💳',
-            processingTime: '2-3 minutos',
-            discount: 0,                // Sem desconto
-            enabled: true
-        },
-        boleto: {                       // Configuração do Boleto Bancário
-            name: 'Boleto Bancário',
-            icon: '🧾',
-            processingTime: '1-2 dias úteis',
-            discount: 0,
-            enabled: true
-        },
-        debit: {                        // Configuração do Cartão de Débito
-            name: 'Cartão de Débito',
-            icon: '💳',
-            processingTime: 'Instantâneo',
-            discount: 0,
-            enabled: true
-        }
-    },
-    taxes: {                            // Taxas do sistema
-        processing: 0.029,              // Taxa de processamento: 2.9%
-        platform: 0.01                 // Taxa da plataforma: 1%
+class PaymentSystem {
+    constructor() {
+        this.jitsiConfig = {
+            appId: 'vpaas-magic-cookie-d4eb95e56d4140978d223283225476be',
+            apiKey: 'vpaas-magic-cookie-d4eb95e56d4140978d223283225476be/feda42'
+        };
+        this.currentAppointment = null;
+        this.paymentModal = null;
+        this.init();
     }
-};
 
-/**
- * PROCESSAR PAGAMENTO
- * Função principal que coordena o processamento de pagamentos
- * @param {string} method - Método de pagamento escolhido ('pix', 'credit', 'boleto', 'debit')
- */
-function processPayment(method) {
-    // Verifica se uma especialidade foi selecionada
-    if (!TeleMed.selectedSpecialty) {
-        showNotification('Erro', 'Nenhuma especialidade selecionada', 'error');
-        return;
+    init() {
+        this.createPaymentModal();
+        this.setupEventListeners();
+        console.log('💳 Sistema de Pagamentos inicializado');
     }
-    
-    // Verifica se o método de pagamento é válido e está habilitado
-    const paymentMethod = PAYMENT_CONFIG.methods[method];
-    if (!paymentMethod || !paymentMethod.enabled) {
-        showNotification('Erro', 'Método de pagamento não disponível', 'error');
-        return;
-    }
-    
-    // Calcula o valor final com desconto (se aplicável)
-    const baseAmount = TeleMed.selectedSpecialty.price;
-    const discount = paymentMethod.discount * baseAmount;
-    const finalAmount = baseAmount - discount;
-    
-    // Cria objeto com dados do pagamento para rastreamento
-    const paymentData = {
-        id: generateId(),                           // ID único do pagamento
-        specialtyId: TeleMed.selectedSpecialty.id,  // ID da especialidade
-        specialty: TeleMed.selectedSpecialty.name,  // Nome da especialidade
-        method: method,                             // Método de pagamento
-        methodName: paymentMethod.name,             // Nome do método
-        baseAmount: baseAmount,                     // Valor original
-        discount: discount,                         // Valor do desconto
-        finalAmount: finalAmount,                   // Valor final a pagar
-        status: 'processing',                       // Status inicial
-        timestamp: new Date(),                      // Data/hora do pagamento
-        user: TeleMed.currentUser                   // Dados do usuário
-    };
-    
-    // Fecha o modal de pagamento
-    closeModal('paymentModal');
-    
-    // Mostra notificação de processamento
-    showNotification('Processando pagamento', 
-        `Processando ${paymentMethod.name} - ${formatCurrency(finalAmount)}`, 
-        'info'
-    );
-    
-    // Direciona para o processamento específico do método escolhido
-    switch(method) {
-        case 'pix':
-            processPixPayment(paymentData);
-            break;
-        case 'credit':
-            processCreditCardPayment(paymentData);
-            break;
-        case 'boleto':
-            processBoletoPayment(paymentData);
-            break;
-        case 'debit':
-            processDebitCardPayment(paymentData);
-            break;
-    }
-}
 
-/**
- * PROCESSAR PAGAMENTO PIX
- * Gerencia o fluxo de pagamento via PIX, exibindo QR Code e simulando processamento
- * @param {Object} paymentData - Dados do pagamento a ser processado
- */
-function processPixPayment(paymentData) {
-    // Exibe modal com QR Code do PIX para o usuário escanear
-    showPixQRCode(paymentData);
-    
-    // Simula o processamento do PIX (em produção seria integração real)
-    setTimeout(() => {
-        paymentData.status = 'completed';                    // Marca como concluído
-        paymentData.transactionId = 'PIX' + Date.now();      // Gera ID da transação
-        
-        // Finaliza o pagamento e adiciona à fila de consultas
-        completePayment(paymentData);
-    }, 3000); // 3 segundos para simular processamento instantâneo do PIX
-}
-
-// Process Credit Card Payment
-function processCreditCardPayment(paymentData) {
-    // Show credit card form
-    showCreditCardForm(paymentData);
-}
-
-// Process Boleto Payment
-function processBoletoPayment(paymentData) {
-    // Generate boleto
-    generateBoleto(paymentData);
-    
-    // Simulate boleto processing (immediate for demo)
-    setTimeout(() => {
-        paymentData.status = 'pending';
-        paymentData.transactionId = 'BOL' + Date.now();
-        
-        showNotification('Boleto gerado', 
-            'Boleto enviado para seu email. Prazo de pagamento: 2 dias úteis', 
-            'success'
-        );
-        
-        // Add to payment history
-        addPaymentToHistory(paymentData);
-    }, 2000);
-}
-
-// Process Debit Card Payment
-function processDebitCardPayment(paymentData) {
-    // Show debit card form
-    showDebitCardForm(paymentData);
-}
-
-// Show PIX QR Code
-function showPixQRCode(paymentData) {
-    const qrCodeModal = createModal('pixQRCode', 'Pagamento PIX');
-    
-    const discount = paymentData.discount > 0 ? 
-        `<div class="text-green-600 text-sm mb-2">💰 Desconto PIX: ${formatCurrency(paymentData.discount)}</div>` : '';
-    
-    qrCodeModal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="text-2xl font-bold text-gray-900">📱 Pagamento PIX</h3>
-                <button onclick="closeModal('pixQRCode')" class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body text-center">
-                <div class="mb-4">
-                    <div class="text-2xl font-bold text-green-600">${formatCurrency(paymentData.finalAmount)}</div>
-                    ${discount}
-                </div>
-                
-                <div class="bg-gray-100 p-8 rounded-lg mb-4">
-                    <div class="text-8xl mb-4">📱</div>
-                    <div class="text-sm text-gray-600">
-                        QR Code PIX seria exibido aqui
+    // Criar modal de pagamento
+    createPaymentModal() {
+        const modalHTML = `
+            <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 transform transition-all">
+                    <div class="text-center mb-6">
+                        <div class="text-4xl mb-4">💳</div>
+                        <h2 class="text-2xl font-bold text-gray-900">Finalizar Pagamento</h2>
+                        <p class="text-gray-600">Confirme os dados da sua consulta</p>
                     </div>
-                </div>
-                
-                <div class="space-y-2 text-sm text-gray-600">
-                    <div>1. Abra o app do seu banco</div>
-                    <div>2. Acesse a área PIX</div>
-                    <div>3. Escaneie o QR Code</div>
-                    <div>4. Confirme o pagamento</div>
-                </div>
-                
-                <div class="mt-6">
-                    <div class="text-sm text-gray-500">
-                        Aguardando pagamento... ⏳
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(qrCodeModal);
-    qrCodeModal.classList.remove('hidden');
-}
 
-// Show Credit Card Form
-function showCreditCardForm(paymentData) {
-    const cardModal = createModal('creditCardForm', 'Cartão de Crédito');
-    
-    cardModal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="text-2xl font-bold text-gray-900">💳 Cartão de Crédito</h3>
-                <button onclick="closeModal('creditCardForm')" class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-4 text-center">
-                    <div class="text-2xl font-bold text-blue-600">${formatCurrency(paymentData.finalAmount)}</div>
-                </div>
-                
-                <form id="creditCardFormData" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Número do Cartão</label>
-                        <input type="text" placeholder="1234 5678 9012 3456" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               maxlength="19" oninput="formatCardNumber(this)">
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Validade</label>
-                            <input type="text" placeholder="MM/AA" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   maxlength="5" oninput="formatExpiry(this)">
+                    <!-- Detalhes da Consulta -->
+                    <div id="consultationDetails" class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium">Especialidade:</span>
+                            <span id="specialtyName" class="text-gray-700"></span>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                            <input type="text" placeholder="123" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   maxlength="3">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium">Duração:</span>
+                            <span id="consultationDuration" class="text-gray-700"></span>
+                        </div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium">Médicos Online:</span>
+                            <span id="doctorsOnline" class="text-green-600 font-medium"></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-lg">Total:</span>
+                            <span id="totalPrice" class="text-2xl font-bold text-green-600"></span>
                         </div>
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome no Cartão</label>
-                        <input type="text" placeholder="João Silva" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">CPF</label>
-                        <input type="text" placeholder="123.456.789-00" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               maxlength="14" oninput="formatCPF(this)">
-                    </div>
-                    
-                    <button type="button" onclick="submitCreditCard()" 
-                            class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
-                        Pagar ${formatCurrency(paymentData.finalAmount)}
-                    </button>
-                </form>
-                
-                <div class="mt-4 text-center text-sm text-gray-500">
-                    🔒 Transação segura e criptografada
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(cardModal);
-    cardModal.classList.remove('hidden');
-    
-    // Store payment data for form submission
-    cardModal.paymentData = paymentData;
-}
 
-// Submit Credit Card Payment
-function submitCreditCard() {
-    const modal = document.getElementById('creditCardForm');
-    const paymentData = modal.paymentData;
-    
-    // Simulate card processing
-    closeModal('creditCardForm');
-    
-    showNotification('Processando...', 'Validando dados do cartão', 'info');
-    
-    setTimeout(() => {
-        // Simulate successful payment
-        paymentData.status = 'completed';
-        paymentData.transactionId = 'CC' + Date.now();
-        
-        completePayment(paymentData);
-    }, 4000);
-}
+                    <!-- Formulário de Pagamento -->
+                    <form id="paymentForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Número do Cartão</label>
+                            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   maxlength="19" required>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Validade</label>
+                                <input type="text" id="cardExpiry" placeholder="MM/AA" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       maxlength="5" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">CVV</label>
+                                <input type="text" id="cardCvv" placeholder="123" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       maxlength="4" required>
+                            </div>
+                        </div>
 
-// Generate Boleto
-function generateBoleto(paymentData) {
-    const boletoModal = createModal('boletoGenerated', 'Boleto Bancário');
-    
-    boletoModal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="text-2xl font-bold text-gray-900">🧾 Boleto Bancário</h3>
-                <button onclick="closeModal('boletoGenerated')" class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-4 text-center">
-                    <div class="text-2xl font-bold text-orange-600">${formatCurrency(paymentData.finalAmount)}</div>
-                </div>
-                
-                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-                    <div class="text-sm text-orange-800">
-                        <div class="font-semibold mb-2">📄 Boleto gerado com sucesso!</div>
-                        <div>Número: ${paymentData.transactionId}</div>
-                        <div>Vencimento: ${formatDate(new Date(Date.now() + 2 * 24 * 60 * 60 * 1000))}</div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome no Cartão</label>
+                            <input type="text" id="cardName" placeholder="João Silva" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   required>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="flex space-x-4 pt-4">
+                            <button type="button" onclick="paymentSystem.closePaymentModal()" 
+                                    class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="payButton"
+                                    class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                <span id="payButtonText">Pagar Agora</span>
+                                <div id="payButtonLoading" class="hidden">
+                                    <div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Mensagem de Erro -->
+                    <div id="paymentError" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex">
+                            <div class="text-red-400">⚠️</div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">Erro no Pagamento</h3>
+                                <p id="paymentErrorMessage" class="text-sm text-red-700 mt-1"></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="space-y-3 text-sm text-gray-600">
-                    <div>• Boleto enviado para ${TeleMed.currentUser.email}</div>
-                    <div>• Prazo de pagamento: 2 dias úteis</div>
-                    <div>• Após pagamento, liberação em até 2 dias úteis</div>
-                    <div>• Valor não pago após vencimento: multa de 2%</div>
-                </div>
-                
-                <div class="mt-6 space-y-2">
-                    <button onclick="downloadBoleto()" 
-                            class="w-full bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700 transition font-semibold">
-                        📥 Baixar Boleto PDF
-                    </button>
-                    <button onclick="sendBoletoEmail()" 
-                            class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
-                        📧 Reenviar por Email
-                    </button>
-                </div>
             </div>
-        </div>
-    `;
-    
-    document.body.appendChild(boletoModal);
-    boletoModal.classList.remove('hidden');
-}
+        `;
 
-// Complete Payment
-function completePayment(paymentData) {
-    // Close any open modals
-    closeModal('pixQRCode');
-    closeModal('creditCardForm');
-    
-    // Update payment status
-    paymentData.status = 'completed';
-    paymentData.completedAt = new Date();
-    
-    // Add to payment history
-    addPaymentToHistory(paymentData);
-    
-    // Create consultation
-    createConsultation(paymentData);
-    
-    // Show success notification
-    showNotification('Pagamento aprovado!', 
-        `Pagamento de ${formatCurrency(paymentData.finalAmount)} aprovado com sucesso!`, 
-        'success'
-    );
-    
-    // Add to consultation queue
-    addToConsultationQueue(paymentData);
-}
-
-// Add Payment to History
-function addPaymentToHistory(paymentData) {
-    if (!TeleMed.paymentHistory) {
-        TeleMed.paymentHistory = [];
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        this.paymentModal = document.getElementById('paymentModal');
     }
-    
-    TeleMed.paymentHistory.push(paymentData);
-    
-    // Store in localStorage
-    localStorage.setItem('telemed-payments', JSON.stringify(TeleMed.paymentHistory));
-}
 
-// Create Consultation
-function createConsultation(paymentData) {
-    const consultation = {
-        id: generateId(),
-        paymentId: paymentData.id,
-        specialtyId: paymentData.specialtyId,
-        specialty: paymentData.specialty,
-        patient: paymentData.user,
-        doctor: TeleMed.selectedSpecialty.doctors[0], // Assign first available doctor
-        scheduledFor: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes from now
-        status: 'waiting',
-        type: 'video',
-        amount: paymentData.finalAmount
-    };
-    
-    // Add to consultations
-    if (!TeleMed.consultations) {
-        TeleMed.consultations = [];
+    // Configurar event listeners
+    setupEventListeners() {
+        // Formatação automática do número do cartão
+        document.getElementById('cardNumber').addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+
+        // Formatação da data de validade
+        document.getElementById('cardExpiry').addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+
+        // Apenas números no CVV
+        document.getElementById('cardCvv').addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+
+        // Submit do formulário
+        document.getElementById('paymentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.processPayment();
+        });
     }
-    
-    TeleMed.consultations.push(consultation);
-    
-    // Store in localStorage
-    localStorage.setItem('telemed-consultations', JSON.stringify(TeleMed.consultations));
-}
 
-// Add to Consultation Queue
-function addToConsultationQueue(paymentData) {
-    const queueItem = {
-        id: generateId(),
-        patient: paymentData.user.name,
-        specialty: paymentData.specialty,
-        amount: paymentData.finalAmount,
-        timestamp: new Date(),
-        status: 'waiting',
-        position: 1, // This would be calculated based on actual queue
-        estimatedWaitTime: 5 // minutes
-    };
-    
-    // Add to queue
-    if (!TeleMed.consultationQueue) {
-        TeleMed.consultationQueue = [];
+    // Abrir modal de pagamento
+    openPaymentModal(specialtyData) {
+        this.currentAppointment = {
+            specialtyId: specialtyData.id,
+            specialtyName: specialtyData.name,
+            price: specialtyData.price,
+            duration: specialtyData.duration || 30,
+            doctorsOnline: specialtyData.doctorsOnline || 0
+        };
+
+        // Preencher detalhes da consulta
+        document.getElementById('specialtyName').textContent = specialtyData.name;
+        document.getElementById('consultationDuration').textContent = `${specialtyData.duration || 30} minutos`;
+        document.getElementById('doctorsOnline').textContent = `${specialtyData.doctorsOnline || 0} médicos`;
+        document.getElementById('totalPrice').textContent = `R$ ${parseFloat(specialtyData.price).toFixed(2)}`;
+
+        // Mostrar modal
+        this.paymentModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        console.log('💳 Modal de pagamento aberto para:', specialtyData.name);
     }
-    
-    TeleMed.consultationQueue.push(queueItem);
-    
-    // Show queue notification
-    setTimeout(() => {
-        showNotification('Você está na fila!', 
-            `Posição: ${queueItem.position} • Tempo estimado: ${queueItem.estimatedWaitTime} minutos`, 
-            'info'
-        );
-    }, 2000);
-}
 
-// Utility Functions
-function createModal(id, title) {
-    const modal = document.createElement('div');
-    modal.id = id;
-    modal.className = 'modal-overlay hidden';
-    return modal;
-}
-
-function formatCardNumber(input) {
-    let value = input.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    let formattedValue = value.match(/.{1,4}/g)?.join(' ') || '';
-    if (formattedValue.length > 19) formattedValue = formattedValue.substr(0, 19);
-    input.value = formattedValue;
-}
-
-function formatExpiry(input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value.length >= 2) {
-        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    // Fechar modal de pagamento
+    closePaymentModal() {
+        this.paymentModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        this.clearForm();
+        this.hideError();
     }
-    input.value = value;
-}
 
-function formatCPF(input) {
-    let value = input.value.replace(/\D/g, '');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    input.value = value;
-}
+    // Processar pagamento
+    async processPayment() {
+        const payButton = document.getElementById('payButton');
+        const payButtonText = document.getElementById('payButtonText');
+        const payButtonLoading = document.getElementById('payButtonLoading');
 
-function downloadBoleto() {
-    showNotification('Download iniciado', 'Boleto sendo baixado...', 'info');
-    // Simulate download
-    setTimeout(() => {
-        showNotification('Download concluído', 'Boleto salvo na pasta Downloads', 'success');
-    }, 2000);
-}
-
-function sendBoletoEmail() {
-    showNotification('Email enviado', 'Boleto reenviado para seu email', 'success');
-}
-
-// Load Payment History
-function loadPaymentHistory() {
-    const stored = localStorage.getItem('telemed-payments');
-    if (stored) {
         try {
-            TeleMed.paymentHistory = JSON.parse(stored);
-        } catch (e) {
-            console.error('Error loading payment history:', e);
-            TeleMed.paymentHistory = [];
+            // Mostrar loading
+            payButtonText.classList.add('hidden');
+            payButtonLoading.classList.remove('hidden');
+            payButton.disabled = true;
+
+            // Validar formulário
+            if (!this.validatePaymentForm()) {
+                throw new Error('Por favor, preencha todos os campos corretamente');
+            }
+
+            // Simular processamento de pagamento
+            console.log('💳 Processando pagamento...');
+            await this.simulatePaymentProcessing();
+
+            // Criar consulta no banco de dados
+            const appointmentId = await this.createAppointment();
+
+            // Adicionar à fila
+            await this.addToQueue(appointmentId);
+
+            // Fechar modal e mostrar sucesso
+            this.closePaymentModal();
+            this.showPaymentSuccess(appointmentId);
+
+            // Redirecionar para fila de espera
+            setTimeout(() => {
+                this.redirectToQueue(appointmentId);
+            }, 2000);
+
+        } catch (error) {
+            console.error('❌ Erro no pagamento:', error);
+            this.showError(error.message);
+        } finally {
+            // Restaurar botão
+            payButtonText.classList.remove('hidden');
+            payButtonLoading.classList.add('hidden');
+            payButton.disabled = false;
         }
-    } else {
-        TeleMed.paymentHistory = [];
+    }
+
+    // Validar formulário de pagamento
+    validatePaymentForm() {
+        const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+        const cardExpiry = document.getElementById('cardExpiry').value;
+        const cardCvv = document.getElementById('cardCvv').value;
+        const cardName = document.getElementById('cardName').value;
+
+        if (cardNumber.length < 13 || cardNumber.length > 19) {
+            throw new Error('Número do cartão inválido');
+        }
+
+        if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) {
+            throw new Error('Data de validade inválida');
+        }
+
+        if (cardCvv.length < 3 || cardCvv.length > 4) {
+            throw new Error('CVV inválido');
+        }
+
+        if (cardName.trim().length < 2) {
+            throw new Error('Nome no cartão é obrigatório');
+        }
+
+        return true;
+    }
+
+    // Simular processamento de pagamento
+    async simulatePaymentProcessing() {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                // Simular 95% de sucesso
+                if (Math.random() > 0.05) {
+                    resolve({ success: true, transactionId: 'TXN_' + Date.now() });
+                } else {
+                    reject(new Error('Cartão recusado. Tente outro cartão ou entre em contato com seu banco.'));
+                }
+            }, 2000);
+        });
+    }
+
+    // Criar consulta no banco de dados
+    async createAppointment() {
+        try {
+            const { data: user } = await supabase.auth.getUser();
+            if (!user.user) {
+                throw new Error('Usuário não autenticado');
+            }
+
+            const appointmentData = {
+                patient_id: user.user.id,
+                specialty_id: this.currentAppointment.specialtyId,
+                scheduled_date: new Date().toISOString().split('T')[0],
+                scheduled_time: new Date().toTimeString().split(' ')[0],
+                duration: this.currentAppointment.duration,
+                status: 'paid',
+                type: 'video',
+                price: this.currentAppointment.price,
+                payment_id: 'PAY_' + Date.now()
+            };
+
+            const { data, error } = await supabase
+                .from('appointments')
+                .insert([appointmentData])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            console.log('✅ Consulta criada:', data.id);
+            return data.id;
+
+        } catch (error) {
+            console.error('❌ Erro ao criar consulta:', error);
+            throw new Error('Erro ao processar consulta. Tente novamente.');
+        }
+    }
+
+    // Adicionar à fila de espera
+    async addToQueue(appointmentId) {
+        try {
+            // Obter próxima posição na fila
+            const { data: queueData } = await supabase
+                .from('consultation_queue')
+                .select('position')
+                .eq('specialty_id', this.currentAppointment.specialtyId)
+                .order('position', { ascending: false })
+                .limit(1);
+
+            const nextPosition = queueData && queueData.length > 0 ? queueData[0].position + 1 : 1;
+
+            const { data: user } = await supabase.auth.getUser();
+            const queueEntry = {
+                appointment_id: appointmentId,
+                specialty_id: this.currentAppointment.specialtyId,
+                patient_id: user.user.id,
+                position: nextPosition,
+                estimated_wait_time: nextPosition * 15, // 15 min por posição
+                status: 'waiting'
+            };
+
+            const { data, error } = await supabase
+                .from('consultation_queue')
+                .insert([queueEntry])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            console.log('✅ Adicionado à fila na posição:', nextPosition);
+            return data;
+
+        } catch (error) {
+            console.error('❌ Erro ao adicionar à fila:', error);
+            throw new Error('Erro ao entrar na fila. Tente novamente.');
+        }
+    }
+
+    // Mostrar sucesso do pagamento
+    showPaymentSuccess(appointmentId) {
+        const successHTML = `
+            <div id="paymentSuccess" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 text-center">
+                    <div class="text-6xl mb-4">✅</div>
+                    <h2 class="text-2xl font-bold text-green-600 mb-4">Pagamento Aprovado!</h2>
+                    <p class="text-gray-600 mb-4">Sua consulta foi confirmada e você foi adicionado à fila de atendimento.</p>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                        <p class="text-sm text-green-800">
+                            <strong>ID da Consulta:</strong> ${appointmentId.substring(0, 8)}...<br>
+                            <strong>Especialidade:</strong> ${this.currentAppointment.specialtyName}
+                        </p>
+                    </div>
+                    <p class="text-sm text-gray-500">Redirecionando para a fila de espera...</p>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', successHTML);
+
+        // Remover após 3 segundos
+        setTimeout(() => {
+            const successModal = document.getElementById('paymentSuccess');
+            if (successModal) {
+                successModal.remove();
+            }
+        }, 3000);
+    }
+
+    // Redirecionar para fila de espera
+    redirectToQueue(appointmentId) {
+        // Aqui você pode redirecionar para uma página específica da fila
+        // ou mostrar a interface da fila na mesma página
+        console.log('🔄 Redirecionando para fila de espera...');
+        
+        // Por enquanto, vamos mostrar a interface da fila
+        if (window.queueSystem) {
+            window.queueSystem.showQueueInterface(appointmentId);
+        }
+    }
+
+    // Mostrar erro
+    showError(message) {
+        const errorDiv = document.getElementById('paymentError');
+        const errorMessage = document.getElementById('paymentErrorMessage');
+        
+        errorMessage.textContent = message;
+        errorDiv.classList.remove('hidden');
+
+        // Esconder erro após 5 segundos
+        setTimeout(() => {
+            this.hideError();
+        }, 5000);
+    }
+
+    // Esconder erro
+    hideError() {
+        const errorDiv = document.getElementById('paymentError');
+        errorDiv.classList.add('hidden');
+    }
+
+    // Limpar formulário
+    clearForm() {
+        document.getElementById('paymentForm').reset();
+        this.hideError();
     }
 }
 
-// Get Payment History
-function getPaymentHistory() {
-    return TeleMed.paymentHistory || [];
+// Função global para abrir modal de pagamento
+function selectSpecialty(specialtyId, specialtyName, price) {
+    // Buscar dados completos da especialidade
+    const specialtyData = {
+        id: specialtyId,
+        name: specialtyName,
+        price: price,
+        duration: 30, // Padrão
+        doctorsOnline: Math.floor(Math.random() * 10) + 1 // Simulado
+    };
+
+    // Abrir modal de pagamento
+    if (window.paymentSystem) {
+        window.paymentSystem.openPaymentModal(specialtyData);
+    } else {
+        console.error('Sistema de pagamentos não inicializado');
+    }
 }
 
-// Get Payment by ID
-function getPaymentById(id) {
-    return TeleMed.paymentHistory?.find(payment => payment.id === id);
-}
-
-// Initialize payment system
-document.addEventListener('DOMContentLoaded', function() {
-    loadPaymentHistory();
+// Inicializar sistema quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+    window.paymentSystem = new PaymentSystem();
 });
 
-// Export functions
-window.processPayment = processPayment;
-window.submitCreditCard = submitCreditCard;
-window.downloadBoleto = downloadBoleto;
-window.sendBoletoEmail = sendBoletoEmail;
-window.getPaymentHistory = getPaymentHistory;
-window.getPaymentById = getPaymentById;
-window.formatCardNumber = formatCardNumber;
-window.formatExpiry = formatExpiry;
-window.formatCPF = formatCPF;
-
-console.log('✅ TeleMed Payment System Loaded');
+// Exportar para uso em outros módulos
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = PaymentSystem;
+}
