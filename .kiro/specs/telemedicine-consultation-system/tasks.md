@@ -70,7 +70,10 @@
   - Adicionar confirmação de pagamento com detalhes da consulta
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 6. Criar sistema de fila de consultas em tempo real
+- [x] 6. Criar sistema de fila de consultas em tempo real
+
+
+
   - Implementar entrada automática na fila após pagamento confirmado
   - Desenvolver interface de exibição de posição na fila
   - Criar sistema de atualizações em tempo real usando Supabase subscriptions

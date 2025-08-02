@@ -1008,7 +1008,7 @@
             currentSpecialty = null;
         }
 
-        // Processar pagamento (simulado)
+        // Processar pagamento (integrado com sistema de fila em tempo real)
         async function processPayment() {
             if (!currentSpecialty) return;
 
@@ -1018,46 +1018,64 @@
                 // Fechar modal da especialidade
                 closeSpecialtyModal();
                 
-                // Simular processamento de pagamento
-                const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
-                loadingDiv.innerHTML = `
-                    <div class="bg-white rounded-xl p-8 text-center">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                        <h3 class="text-lg font-bold text-gray-900">Processando Pagamento...</h3>
-                        <p class="text-gray-600">Aguarde um momento</p>
-                    </div>
-                `;
-                document.body.appendChild(loadingDiv);
-
-                // Simular delay do pagamento
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                
-                // Remover loading
-                document.body.removeChild(loadingDiv);
-                
-                // Criar consulta simulada
-                currentAppointment = {
-                    id: 'apt_' + Date.now(),
-                    specialtyId: currentSpecialty.id,
-                    specialtyName: currentSpecialty.name,
-                    price: currentSpecialty.price,
-                    status: 'paid',
-                    queuePosition: Math.floor(Math.random() * 5) + 1
-                };
-                
-                console.log('Pagamento aprovado! Consulta criada:', currentAppointment.id);
-                
-                // Mostrar modal de fila
-                showQueueModal();
-                
-                // Iniciar simulação da fila
-                startQueueSimulation();
+                // Usar o sistema de fila em tempo real
+                if (window.realTimeQueue) {
+                    const success = await window.realTimeQueue.processPaymentAndJoinQueue(currentSpecialty);
+                    
+                    if (success) {
+                        console.log('✅ Pagamento processado e usuário adicionado à fila em tempo real');
+                        // O sistema de fila em tempo real cuidará do resto
+                    } else {
+                        console.error('❌ Falha no processamento do pagamento');
+                    }
+                } else {
+                    // Fallback para sistema antigo se o novo não estiver disponível
+                    await processPaymentFallback();
+                }
                 
             } catch (error) {
                 console.error('Erro no pagamento:', error);
                 alert('Erro ao processar pagamento. Tente novamente.');
             }
+        }
+
+        // Sistema de pagamento fallback (mantido para compatibilidade)
+        async function processPaymentFallback() {
+            // Simular processamento de pagamento
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+            loadingDiv.innerHTML = `
+                <div class="bg-white rounded-xl p-8 text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                    <h3 class="text-lg font-bold text-gray-900">Processando Pagamento...</h3>
+                    <p class="text-gray-600">Aguarde um momento</p>
+                </div>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            // Simular delay do pagamento
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Remover loading
+            document.body.removeChild(loadingDiv);
+            
+            // Criar consulta simulada
+            currentAppointment = {
+                id: 'apt_' + Date.now(),
+                specialtyId: currentSpecialty.id,
+                specialtyName: currentSpecialty.name,
+                price: currentSpecialty.price,
+                status: 'paid',
+                queuePosition: Math.floor(Math.random() * 5) + 1
+            };
+            
+            console.log('Pagamento aprovado! Consulta criada:', currentAppointment.id);
+            
+            // Mostrar modal de fila
+            showQueueModal();
+            
+            // Iniciar simulação da fila
+            startQueueSimulation();
         }
 
         // Mostrar modal de fila
@@ -1236,6 +1254,7 @@
     <script src="js/payments.js"></script>
     <script src="js/queue.js"></script>
     <script src="js/videocall.js"></script>
+    <script src="js/realtime-queue.js"></script>
 </body>
 
 </html>
