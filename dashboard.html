@@ -477,6 +477,42 @@
     <script src="js/videocall.js"></script>
     <script src="js/realtime-queue.js"></script>
     <script>
+        // Navegação entre seções
+        function showSection(sectionName) {
+            // Esconder todas as seções
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+
+            // Mostrar seção selecionada
+            const targetSection = document.getElementById(sectionName + 'Section');
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+            }
+
+            // Atualizar navegação
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('border-primary-500', 'text-primary-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            // Atualizar botão ativo (se event estiver disponível)
+            if (typeof event !== 'undefined' && event.target) {
+                event.target.classList.remove('border-transparent', 'text-gray-500');
+                event.target.classList.add('border-primary-500', 'text-primary-600');
+            }
+
+            // Carregar dados específicos da seção
+            if (sectionName === 'specialties' && window.databaseSpecialties) {
+                renderDatabaseSpecialties();
+            }
+        }
+
+        // Placeholder functions
+        function openVideoCall() {
+            alert('Funcionalidade de videochamada será implementada');
+        }
+
         // Verificar autenticação ao carregar a página
         document.addEventListener('DOMContentLoaded', async () => {
             try {
@@ -641,13 +677,17 @@
 
             try {
                 console.log('Processando pagamento para:', currentSpecialty.name);
+                console.log('Dados da especialidade:', currentSpecialty);
+                
+                // Salvar referência antes de fechar modal
+                const specialtyToProcess = currentSpecialty;
                 
                 // Fechar modal da especialidade
                 closeSpecialtyModal();
                 
                 // Usar o sistema de fila em tempo real se disponível
                 if (window.realTimeQueue) {
-                    const success = await window.realTimeQueue.processPaymentAndJoinQueue(currentSpecialty);
+                    const success = await window.realTimeQueue.processPaymentAndJoinQueue(specialtyToProcess);
                     
                     if (success) {
                         console.log('✅ Pagamento processado e usuário adicionado à fila em tempo real');
@@ -656,7 +696,7 @@
                     }
                 } else {
                     // Fallback para sistema básico
-                    await processPaymentFallback();
+                    await processPaymentFallback(specialtyToProcess);
                 }
                 
             } catch (error) {
@@ -933,6 +973,12 @@
             }
             renderDatabaseSpecialties();
         }
+    </script>
+
+    <!-- Script de Auto-preenchimento Mercado Pago -->
+    <script src="js/mercado-pago-autofill-final.js"></script>
+</body>
+</html>
 
         // Funcionalidade de logout
         document.getElementById('logoutButton').addEventListener('click', async () => {
@@ -958,35 +1004,7 @@
             }
         });
 
-        // Navegação entre seções
-        function showSection(sectionName) {
-            // Esconder todas as seções
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.add('hidden');
-            });
 
-            // Mostrar seção selecionada
-            document.getElementById(sectionName + 'Section').classList.remove('hidden');
-
-            // Atualizar navegação
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('border-primary-500', 'text-primary-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
-            });
-
-            event.target.classList.remove('border-transparent', 'text-gray-500');
-            event.target.classList.add('border-primary-500', 'text-primary-600');
-
-            // Carregar dados específicos da seção
-            if (sectionName === 'specialties' && window.databaseSpecialties) {
-                renderDatabaseSpecialties();
-            }
-        }
-
-        // Placeholder functions
-        function openVideoCall() {
-            alert('Funcionalidade de videochamada será implementada');
-        }
 
         function searchSpecialties(query) {
             if (window.quickSearchSpecialties) {

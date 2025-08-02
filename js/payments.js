@@ -435,4 +435,87 @@ document.addEventListener('DOMContentLoaded', () => {
 // Exportar para uso em outros módulos
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = PaymentSystem;
+}function createModal(id, title) {
+    const modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'modal-overlay hidden';
+    return modal;
 }
+
+function formatCardNumber(input) {
+    let value = input.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    let formattedValue = value.match(/.{1,4}/g)?.join(' ') || '';
+    if (formattedValue.length > 19) formattedValue = formattedValue.substr(0, 19);
+    input.value = formattedValue;
+}
+
+function formatExpiry(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    }
+    input.value = value;
+}
+
+function formatCPF(input) {
+    let value = input.value.replace(/\D/g, '');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    input.value = value;
+}
+
+function downloadBoleto() {
+    showNotification('Download iniciado', 'Boleto sendo baixado...', 'info');
+    // Simulate download
+    setTimeout(() => {
+        showNotification('Download concluído', 'Boleto salvo na pasta Downloads', 'success');
+    }, 2000);
+}
+
+function sendBoletoEmail() {
+    showNotification('Email enviado', 'Boleto reenviado para seu email', 'success');
+}
+
+// Load Payment History
+function loadPaymentHistory() {
+    const stored = localStorage.getItem('telemed-payments');
+    if (stored) {
+        try {
+            TeleMed.paymentHistory = JSON.parse(stored);
+        } catch (e) {
+            console.error('Error loading payment history:', e);
+            TeleMed.paymentHistory = [];
+        }
+    } else {
+        TeleMed.paymentHistory = [];
+    }
+}
+
+// Get Payment History
+function getPaymentHistory() {
+    return TeleMed.paymentHistory || [];
+}
+
+// Get Payment by ID
+function getPaymentById(id) {
+    return TeleMed.paymentHistory?.find(payment => payment.id === id);
+}
+
+// Initialize payment system
+document.addEventListener('DOMContentLoaded', function() {
+    loadPaymentHistory();
+});
+
+// Export functions
+window.processPayment = processPayment;
+window.submitCreditCard = submitCreditCard;
+window.downloadBoleto = downloadBoleto;
+window.sendBoletoEmail = sendBoletoEmail;
+window.getPaymentHistory = getPaymentHistory;
+window.getPaymentById = getPaymentById;
+window.formatCardNumber = formatCardNumber;
+window.formatExpiry = formatExpiry;
+window.formatCPF = formatCPF;
+
+console.log('✅ TeleMed Payment System Loaded');

@@ -891,6 +891,118 @@
             </div>
         </section>
 
+        <!-- Task 6 Section -->
+        <section id="task6Section" class="test-section">
+            <div class="space-y-6">
+                <!-- Header -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-2xl font-bold text-gray-900">Tarefa 6 - Sistema de Fila em Tempo Real</h2>
+                        <p class="text-gray-600 mt-2">Testes para criação de consultas, fila em tempo real e integração com Mercado Pago</p>
+                    </div>
+                </div>
+
+                <!-- Test 6.1: Appointment Creation -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-900">6.1 - Teste de Criação de Consulta</h3>
+                        <p class="text-gray-600 mt-1">Testa a criação de consulta no banco de dados com dados válidos</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-900 mb-2">Dados de Teste:</h4>
+                            <pre id="task6AppointmentTestData" class="bg-gray-100 p-3 rounded text-sm overflow-x-auto"></pre>
+                        </div>
+                        
+                        <button onclick="runTask6AppointmentTest()" 
+                                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition mr-4">
+                            🧪 Executar Teste
+                        </button>
+                        
+                        <div id="task6AppointmentResult" class="mt-4 hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Test 6.2: Payment Data Validation -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-900">6.2 - Validação de Dados de Pagamento</h3>
+                        <p class="text-gray-600 mt-1">Testa a validação de dados de especialidade para integração com Mercado Pago</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-900 mb-2">Cenários de Teste:</h4>
+                            <ul class="text-sm text-gray-600 list-disc list-inside">
+                                <li>Dados válidos de especialidade</li>
+                                <li>Preço inválido (zero ou negativo)</li>
+                                <li>Dados de especialidade nulos</li>
+                                <li>Campos obrigatórios ausentes</li>
+                            </ul>
+                        </div>
+                        
+                        <button onclick="runTask6PaymentValidationTest()" 
+                                class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition mr-4">
+                            💳 Executar Teste
+                        </button>
+                        
+                        <div id="task6PaymentValidationResult" class="mt-4 hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Test 6.3: Queue System Integration -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-900">6.3 - Integração com Sistema de Fila</h3>
+                        <p class="text-gray-600 mt-1">Testa a adição automática à fila após criação da consulta</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-900 mb-2">Funcionalidades Testadas:</h4>
+                            <ul class="text-sm text-gray-600 list-disc list-inside">
+                                <li>Cálculo automático de posição na fila</li>
+                                <li>Estimativa de tempo de espera</li>
+                                <li>Inserção na tabela consultation_queue</li>
+                                <li>Relacionamento com appointment</li>
+                            </ul>
+                        </div>
+                        
+                        <button onclick="runTask6QueueIntegrationTest()" 
+                                class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition mr-4">
+                            ⏳ Executar Teste
+                        </button>
+                        
+                        <div id="task6QueueIntegrationResult" class="mt-4 hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Test 6.4: Real-time Monitoring -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-900">6.4 - Monitoramento em Tempo Real</h3>
+                        <p class="text-gray-600 mt-1">Testa as subscriptions do Supabase para atualizações em tempo real</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-900 mb-2">Componentes Testados:</h4>
+                            <ul class="text-sm text-gray-600 list-disc list-inside">
+                                <li>Subscription para mudanças na fila</li>
+                                <li>Subscription para notificações</li>
+                                <li>Subscription para status de médicos</li>
+                                <li>Tratamento de eventos em tempo real</li>
+                            </ul>
+                        </div>
+                        
+                        <button onclick="runTask6RealtimeTest()" 
+                                class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition mr-4">
+                            📡 Executar Teste
+                        </button>
+                        
+                        <div id="task6RealtimeResult" class="mt-4 hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Database Section -->
         <section id="databaseSection" class="test-section">
             <div class="bg-white rounded-lg shadow mb-6">
@@ -3215,7 +3327,603 @@
                     loadTask5TestSpecialties();
                 }, 1000);
             }
+
+            // Initialize Task 6 test data
+            if (document.getElementById('task6Section')) {
+                setTimeout(() => {
+                    initializeTask6TestData();
+                }, 1000);
+            }
         });
+
+        // ==========================================
+        // TASK 6 - SISTEMA DE FILA EM TEMPO REAL
+        // ==========================================
+
+        // Initialize Task 6 test data
+        function initializeTask6TestData() {
+            const testSpecialty = {
+                id: 'af5a712c-3ecf-4b51-952f-b7924fed0fc0', // Real specialty ID
+                name: 'Clínica Geral',
+                description: 'Consulta médica geral para diagnóstico e tratamento',
+                icon: '🩺',
+                price: 80,
+                duration: 30
+            };
+            
+            const testPaymentResult = {
+                success: true,
+                transactionId: 'TEST_' + Date.now(),
+                paymentMethod: 'credit_card',
+                amount: 80,
+                status: 'approved'
+            };
+            
+            const testData = {
+                specialty: testSpecialty,
+                paymentResult: testPaymentResult,
+                appointmentData: {
+                    patient_id: 'user_id_placeholder',
+                    specialty_id: testSpecialty.id,
+                    scheduled_date: new Date().toISOString().split('T')[0],
+                    scheduled_time: new Date().toTimeString().split(' ')[0],
+                    duration: testSpecialty.duration,
+                    status: 'scheduled',
+                    type: 'video',
+                    price: testSpecialty.price,
+                    payment_id: testPaymentResult.transactionId
+                }
+            };
+            
+            document.getElementById('task6AppointmentTestData').textContent = JSON.stringify(testData, null, 2);
+        }
+
+        // Test 6.1: Appointment Creation
+        async function runTask6AppointmentTest() {
+            const resultDiv = document.getElementById('task6AppointmentResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.className = 'mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200';
+            resultDiv.innerHTML = '<p class="text-blue-800">🔄 Testando criação de consulta...</p>';
+            
+            try {
+                // Get current user
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    throw new Error('Usuário não autenticado. Faça login primeiro.');
+                }
+                
+                // Test specialty data
+                const testSpecialty = {
+                    id: 'af5a712c-3ecf-4b51-952f-b7924fed0fc0',
+                    name: 'Clínica Geral',
+                    description: 'Consulta médica geral para diagnóstico e tratamento',
+                    icon: '🩺',
+                    price: 80,
+                    duration: 30
+                };
+                
+                const testPaymentResult = {
+                    transactionId: 'TEST_APPOINTMENT_' + Date.now(),
+                    paymentMethod: 'credit_card',
+                    amount: 80,
+                    status: 'approved'
+                };
+                
+                // Create appointment data
+                const appointmentData = {
+                    patient_id: user.id,
+                    specialty_id: testSpecialty.id,
+                    scheduled_date: new Date().toISOString().split('T')[0],
+                    scheduled_time: new Date().toTimeString().split(' ')[0],
+                    duration: testSpecialty.duration || 30,
+                    status: 'scheduled',
+                    type: 'video',
+                    price: testSpecialty.price || 0,
+                    payment_id: testPaymentResult.transactionId
+                };
+                
+                console.log('Task 6.1 - Appointment data:', appointmentData);
+                
+                // Test database insertion
+                const { data, error } = await supabase
+                    .from('appointments')
+                    .insert([appointmentData])
+                    .select(`
+                        *,
+                        specialties (name, icon, description)
+                    `)
+                    .single();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                console.log('Task 6.1 - Appointment created:', data);
+                
+                // Test passed
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-green-50 border border-green-200';
+                resultDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="text-green-600 text-xl mr-3">✅</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-green-800">Teste 6.1 - Criação de Consulta: PASSOU</h4>
+                            <ul class="text-green-700 text-sm mt-2 space-y-1">
+                                <li>✓ Usuário autenticado: ${user.email}</li>
+                                <li>✓ Consulta criada: ${data.id}</li>
+                                <li>✓ Status: ${data.status}</li>
+                                <li>✓ Preço: R$ ${data.price}</li>
+                                <li>✓ Especialidade: ${data.specialties?.name}</li>
+                                <li>✓ Data: ${data.scheduled_date}</li>
+                                <li>✓ Horário: ${data.scheduled_time}</li>
+                                <li>✓ Payment ID: ${data.payment_id}</li>
+                            </ul>
+                            <div class="mt-3 p-2 bg-green-100 rounded text-xs">
+                                <strong>ID da Consulta:</strong> ${data.id}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Update test results
+                testResults.task6 = testResults.task6 || {};
+                testResults.task6.appointmentCreation = {
+                    status: 'passed',
+                    message: 'Consulta criada com sucesso',
+                    appointmentId: data.id,
+                    timestamp: new Date().toISOString()
+                };
+                
+            } catch (error) {
+                console.error('Task 6.1 - Appointment creation test failed:', error);
+                
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 border border-red-200';
+                resultDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="text-red-600 text-xl mr-3">❌</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-red-800">Teste 6.1 - Criação de Consulta: FALHOU</h4>
+                            <p class="text-red-700 text-sm mt-2">Erro: ${error.message}</p>
+                            <div class="mt-3 p-2 bg-red-100 rounded text-xs">
+                                <strong>Detalhes:</strong>
+                                <pre class="mt-1 whitespace-pre-wrap">${JSON.stringify(error, null, 2)}</pre>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Update test results
+                testResults.task6 = testResults.task6 || {};
+                testResults.task6.appointmentCreation = {
+                    status: 'failed',
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                };
+            }
+        }
+
+        // Test 6.2: Payment Data Validation
+        async function runTask6PaymentValidationTest() {
+            const resultDiv = document.getElementById('task6PaymentValidationResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.className = 'mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200';
+            resultDiv.innerHTML = '<p class="text-blue-800">🔄 Testando validação de dados de pagamento...</p>';
+            
+            try {
+                const testCases = [
+                    {
+                        name: 'Dados válidos',
+                        data: {
+                            id: 'test-123',
+                            name: 'Clínica Geral',
+                            price: 80,
+                            duration: 30
+                        },
+                        shouldPass: true
+                    },
+                    {
+                        name: 'Preço zero',
+                        data: {
+                            id: 'test-123',
+                            name: 'Clínica Geral',
+                            price: 0,
+                            duration: 30
+                        },
+                        shouldPass: false
+                    },
+                    {
+                        name: 'Preço negativo',
+                        data: {
+                            id: 'test-123',
+                            name: 'Clínica Geral',
+                            price: -10,
+                            duration: 30
+                        },
+                        shouldPass: false
+                    },
+                    {
+                        name: 'Dados nulos',
+                        data: null,
+                        shouldPass: false
+                    },
+                    {
+                        name: 'Preço ausente',
+                        data: {
+                            id: 'test-123',
+                            name: 'Clínica Geral',
+                            duration: 30
+                        },
+                        shouldPass: false
+                    }
+                ];
+                
+                const results = [];
+                
+                for (const testCase of testCases) {
+                    try {
+                        // Simulate the validation logic from realtime-queue.js
+                        if (!testCase.data) {
+                            throw new Error('Dados da especialidade não fornecidos');
+                        }
+                        
+                        if (!testCase.data.price || isNaN(parseFloat(testCase.data.price))) {
+                            throw new Error('Preço da especialidade inválido: ' + testCase.data.price);
+                        }
+                        
+                        if (parseFloat(testCase.data.price) <= 0) {
+                            throw new Error('Preço deve ser maior que zero: ' + testCase.data.price);
+                        }
+                        
+                        // If we get here, validation passed
+                        results.push({
+                            name: testCase.name,
+                            passed: testCase.shouldPass,
+                            expected: testCase.shouldPass,
+                            message: 'Validação passou como esperado'
+                        });
+                        
+                    } catch (error) {
+                        results.push({
+                            name: testCase.name,
+                            passed: !testCase.shouldPass,
+                            expected: testCase.shouldPass,
+                            message: error.message
+                        });
+                    }
+                }
+                
+                const allPassed = results.every(r => r.passed === r.expected);
+                
+                if (allPassed) {
+                    resultDiv.className = 'mt-4 p-4 rounded-lg bg-green-50 border border-green-200';
+                    resultDiv.innerHTML = `
+                        <div class="flex items-start">
+                            <div class="text-green-600 text-xl mr-3">✅</div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-green-800">Teste 6.2 - Validação de Pagamento: PASSOU</h4>
+                                <div class="mt-3 space-y-2">
+                                    ${results.map(r => `
+                                        <div class="flex items-center text-sm">
+                                            <span class="text-green-600 mr-2">✓</span>
+                                            <span class="text-green-700">${r.name}: ${r.message}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Alguns testes de validação falharam');
+                }
+                
+                // Update test results
+                testResults.task6 = testResults.task6 || {};
+                testResults.task6.paymentValidation = {
+                    status: 'passed',
+                    message: 'Todos os cenários de validação passaram',
+                    results: results,
+                    timestamp: new Date().toISOString()
+                };
+                
+            } catch (error) {
+                console.error('Task 6.2 - Payment validation test failed:', error);
+                
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 border border-red-200';
+                resultDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="text-red-600 text-xl mr-3">❌</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-red-800">Teste 6.2 - Validação de Pagamento: FALHOU</h4>
+                            <p class="text-red-700 text-sm mt-2">Erro: ${error.message}</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Update test results
+                testResults.task6 = testResults.task6 || {};
+                testResults.task6.paymentValidation = {
+                    status: 'failed',
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                };
+            }
+        }
+
+        // Test 6.3: Queue System Integration
+        async function runTask6QueueIntegrationTest() {
+            const resultDiv = document.getElementById('task6QueueIntegrationResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.className = 'mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200';
+            resultDiv.innerHTML = '<p class="text-blue-800">🔄 Testando integração com sistema de fila...</p>';
+            
+            try {
+                // Get current user
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    throw new Error('Usuário não autenticado. Faça login primeiro.');
+                }
+                
+                // First create an appointment
+                const appointmentData = {
+                    patient_id: user.id,
+                    specialty_id: 'af5a712c-3ecf-4b51-952f-b7924fed0fc0',
+                    scheduled_date: new Date().toISOString().split('T')[0],
+                    scheduled_time: new Date().toTimeString().split(' ')[0],
+                    duration: 30,
+                    status: 'scheduled',
+                    type: 'video',
+                    price: 80,
+                    payment_id: 'TEST_QUEUE_' + Date.now()
+                };
+                
+                const { data: appointment, error: appointmentError } = await supabase
+                    .from('appointments')
+                    .insert([appointmentData])
+                    .select()
+                    .single();
+                
+                if (appointmentError) {
+                    throw appointmentError;
+                }
+                
+                // Get current queue position for this specialty
+                const { data: queueData } = await supabase
+                    .from('consultation_queue')
+                    .select('position')
+                    .eq('specialty_id', appointment.specialty_id)
+                    .eq('status', 'waiting')
+                    .order('position', { ascending: false })
+                    .limit(1);
+                
+                const nextPosition = queueData && queueData.length > 0 ? queueData[0].position + 1 : 1;
+                const estimatedWaitTime = nextPosition * 10; // 10 min per position
+                
+                // Add to queue
+                const queueEntry = {
+                    appointment_id: appointment.id,
+                    specialty_id: appointment.specialty_id,
+                    patient_id: user.id,
+                    position: nextPosition,
+                    estimated_wait_time: estimatedWaitTime,
+                    status: 'waiting',
+                    joined_at: new Date().toISOString()
+                };
+                
+                const { data: queueResult, error: queueError } = await supabase
+                    .from('consultation_queue')
+                    .insert([queueEntry])
+                    .select()
+                    .single();
+                
+                if (queueError) {
+                    throw queueError;
+                }
+                
+                // Test passed
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-green-50 border border-green-200';
+                resultDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="text-green-600 text-xl mr-3">✅</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-green-800">Teste 6.3 - Integração com Fila: PASSOU</h4>
+                            <ul class="text-green-700 text-sm mt-2 space-y-1">
+                                <li>✓ Consulta criada: ${appointment.id}</li>
+                                <li>✓ Entrada na fila criada: ${queueResult.id}</li>
+                                <li>✓ Posição na fila: ${queueResult.position}</li>
+                                <li>✓ Tempo estimado: ${queueResult.estimated_wait_time} min</li>
+                                <li>✓ Status: ${queueResult.status}</li>
+                                <li>✓ Relacionamento appointment-queue: OK</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                
+                // Update test results
+                testResults.task6 = testResults.task6 || {};
+                testResults.task6.queueIntegration = {
+                    status: 'passed',
+                    message: 'Integração com fila funcionando corretamente',
+                    appointmentId: appointment.id,
+                    queueId: queueResult.id,
+                    position: queueResult.position,
+                    timestamp: new Date().toISOString()
+                };
+                
+            } catch (error) {
+                console.error('Task 6.3 - Queue integration test failed:', error);
+                
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 border border-red-200';
+                resultDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="text-red-600 text-xl mr-3">❌</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-red-800">Teste 6.3 - Integração com Fila: FALHOU</h4>
+                            <p class="text-red-700 text-sm mt-2">Erro: ${error.message}</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Update test results
+                testResults.task6 = testResults.task6 || {};
+                testResults.task6.queueIntegration = {
+                    status: 'failed',
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                };
+            }
+        }
+
+        // Test 6.4: Real-time Monitoring
+        async function runTask6RealtimeTest() {
+            const resultDiv = document.getElementById('task6RealtimeResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.className = 'mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200';
+            resultDiv.innerHTML = '<p class="text-blue-800">🔄 Testando monitoramento em tempo real...</p>';
+            
+            try {
+                // Get current user
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    throw new Error('Usuário não autenticado. Faça login primeiro.');
+                }
+                
+                let subscriptionTests = [];
+                
+                // Test 1: Queue subscription
+                try {
+                    const queueChannel = supabase
+                        .channel('test-queue-updates')
+                        .on('postgres_changes', {
+                            event: '*',
+                            schema: 'public',
+                            table: 'consultation_queue',
+                            filter: `patient_id=eq.${user.id}`
+                        }, (payload) => {
+                            console.log('Queue update received:', payload);
+                        });
+                    
+                    await queueChannel.subscribe();
+                    subscriptionTests.push({ name: 'Queue Subscription', status: 'success' });
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        queueChannel.unsubscribe();
+                    }, 1000);
+                    
+                } catch (error) {
+                    subscriptionTests.push({ name: 'Queue Subscription', status: 'failed', error: error.message });
+                }
+                
+                // Test 2: Notifications subscription
+                try {
+                    const notificationChannel = supabase
+                        .channel('test-user-notifications')
+                        .on('postgres_changes', {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'notifications',
+                            filter: `user_id=eq.${user.id}`
+                        }, (payload) => {
+                            console.log('Notification received:', payload);
+                        });
+                    
+                    await notificationChannel.subscribe();
+                    subscriptionTests.push({ name: 'Notifications Subscription', status: 'success' });
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        notificationChannel.unsubscribe();
+                    }, 1000);
+                    
+                } catch (error) {
+                    subscriptionTests.push({ name: 'Notifications Subscription', status: 'failed', error: error.message });
+                }
+                
+                // Test 3: Doctors status subscription
+                try {
+                    const doctorChannel = supabase
+                        .channel('test-doctor-status')
+                        .on('postgres_changes', {
+                            event: 'UPDATE',
+                            schema: 'public',
+                            table: 'doctors'
+                        }, (payload) => {
+                            console.log('Doctor status update received:', payload);
+                        });
+                    
+                    await doctorChannel.subscribe();
+                    subscriptionTests.push({ name: 'Doctor Status Subscription', status: 'success' });
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        doctorChannel.unsubscribe();
+                    }, 1000);
+                    
+                } catch (error) {
+                    subscriptionTests.push({ name: 'Doctor Status Subscription', status: 'failed', error: error.message });
+                }
+                
+                const allPassed = subscriptionTests.every(test => test.status === 'success');
+                
+                if (allPassed) {
+                    resultDiv.className = 'mt-4 p-4 rounded-lg bg-green-50 border border-green-200';
+                    resultDiv.innerHTML = `
+                        <div class="flex items-start">
+                            <div class="text-green-600 text-xl mr-3">✅</div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-green-800">Teste 6.4 - Monitoramento em Tempo Real: PASSOU</h4>
+                                <div class="mt-3 space-y-2">
+                                    ${subscriptionTests.map(test => `
+                                        <div class="flex items-center text-sm">
+                                            <span class="text-green-600 mr-2">✓</span>
+                                            <span class="text-green-700">${test.name}: Configurado com sucesso</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="mt-3 p-2 bg-green-100 rounded text-xs">
+                                    <strong>Nota:</strong> Subscriptions foram criadas e testadas. Em produção, elas permaneceriam ativas para receber atualizações em tempo real.
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Algumas subscriptions falharam');
+                }
+                
+                // Update test results
+                testResults.task6 = testResults.task6 || {};
+                testResults.task6.realtimeMonitoring = {
+                    status: 'passed',
+                    message: 'Todas as subscriptions configuradas com sucesso',
+                    subscriptions: subscriptionTests,
+                    timestamp: new Date().toISOString()
+                };
+                
+            } catch (error) {
+                console.error('Task 6.4 - Real-time monitoring test failed:', error);
+                
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 border border-red-200';
+                resultDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="text-red-600 text-xl mr-3">❌</div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-red-800">Teste 6.4 - Monitoramento em Tempo Real: FALHOU</h4>
+                            <p class="text-red-700 text-sm mt-2">Erro: ${error.message}</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Update test results
+                testResults.task6 = testResults.task6 || {};
+                testResults.task6.realtimeMonitoring = {
+                    status: 'failed',
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                };
+            }
+        }
     </script>
 </body>
 

@@ -112,14 +112,27 @@ class RealTimeQueueSystem {
         }
 
         try {
-            console.log('💳 Processando pagamento para:', specialtyData.name);
+            console.log('💳 Processando pagamento para:', specialtyData?.name || 'Especialidade');
+            console.log('📊 Dados da especialidade recebidos:', specialtyData);
+            
+            // Validar dados obrigatórios
+            if (!specialtyData) {
+                throw new Error('Dados da especialidade não fornecidos');
+            }
+            
+            if (!specialtyData.price || isNaN(parseFloat(specialtyData.price))) {
+                throw new Error('Preço da especialidade inválido: ' + specialtyData.price);
+            }
+            
+            if (parseFloat(specialtyData.price) <= 0) {
+                throw new Error('Preço deve ser maior que zero: ' + specialtyData.price);
+            }
 
             // Mostrar loading de pagamento
             this.showPaymentLoading();
 
-            // Simular processamento de pagamento
-            // TODO: Integrar com Mercado Pago API
-            const paymentResult = await this.simulatePayment(specialtyData, paymentData);
+            // Processar pagamento com Mercado Pago
+            const paymentResult = await this.processPaymentWithMercadoPago(specialtyData, paymentData);
             
             if (!paymentResult.success) {
                 throw new Error(paymentResult.error || 'Falha no pagamento');
@@ -157,7 +170,295 @@ class RealTimeQueueSystem {
         }
     }
 
-    // Simular pagamento (será substituído pela integração com Mercado Pago)
+    // Processar pagamento com Mercado Pago
+    async processPaymentWithMercadoPago(specialtyData, paymentData = null) {
+        try {
+            console.log('💳 Iniciando pagamento com Mercado Pago...');
+
+            // Criar modal de pagamento Mercado Pago
+            const paymentResult = await this.showMercadoPagoModal(specialtyData);
+            
+            return paymentResult;
+
+        } catch (error) {
+            console.error('❌ Erro no pagamento Mercado Pago:', error);
+            return {
+                success: false,
+                error: error.message || 'Erro no processamento do pagamento'
+            };
+        }
+    }
+
+    // Mostrar modal de pagamento Mercado Pago
+    async showMercadoPagoModal(specialtyData) {
+        return new Promise((resolve) => {
+            // Criar modal de pagamento
+            const modal = this.createMercadoPagoModal(specialtyData, resolve);
+            document.body.appendChild(modal);
+
+            // Inicializar Mercado Pago
+            this.initializeMercadoPago(specialtyData, resolve);
+        });
+    }
+
+    // Criar modal de pagamento Mercado Pago
+    createMercadoPagoModal(specialtyData, resolve) {
+        const modal = document.createElement('div');
+        modal.id = 'mercadoPagoModal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+        
+        modal.innerHTML = `
+            <div class="bg-white rounded-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <!-- Header -->
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="text-3xl mr-3">💳</span>
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">Pagamento Seguro</h2>
+                                <p class="text-gray-600">Mercado Pago</p>
+                            </div>
+                        </div>
+                        <button onclick="this.closest('#mercadoPagoModal').remove(); resolve({success: false, error: 'Pagamento cancelado'})" 
+                                class="text-gray-400 hover:text-gray-600 text-xl">×</button>
+                    </div>
+                </div>
+
+                <!-- Detalhes da Consulta -->
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="font-bold text-gray-900 mb-3">📋 Detalhes da Consulta</h3>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-gray-600">Especialidade:</span>
+                            <span class="font-medium">${specialtyData?.name || 'Consulta Médica'}</span>
+                        </div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-gray-600">Duração:</span>
+                            <span class="font-medium">${specialtyData?.duration || 30} min</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-lg font-bold">Total:</span>
+                            <span class="text-2xl font-bold text-green-600">R$ ${parseFloat(specialtyData?.price || 0).toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Container do Mercado Pago -->
+                <div class="p-6">
+                    <div id="cardPaymentBrick_container"></div>
+                    
+                    <!-- Loading -->
+                    <div id="mpLoading" class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p class="text-gray-600">Carregando formulário de pagamento...</p>
+                    </div>
+
+                    <!-- Botão de Preenchimento Automático -->
+                    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-yellow-800">
+                                <strong>💡 Dados de Teste MVP:</strong><br>
+                                <span class="text-xs">TESTUSER1621783976 • 5031 4332 1540 6351 • 123 • 11/30</span>
+                            </div>
+                            <button onclick="
+                                // Carregar e executar o sistema de auto-preenchimento melhorado
+                                if (typeof fillMercadoPagoTestData === 'function') {
+                                    fillMercadoPagoTestData();
+                                } else {
+                                    // Carregar script se não estiver disponível
+                                    const script = document.createElement('script');
+                                    script.src = 'js/mercado-pago-autofill-final.js';
+                                    script.onload = () => {
+                                        if (typeof fillMercadoPagoTestData === 'function') {
+                                            fillMercadoPagoTestData();
+                                        }
+                                    };
+                                    document.head.appendChild(script);
+                                }
+                            " 
+                                    class="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors">
+                                ⚡ Preencher
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="mt-6 flex space-x-4">
+                        <button onclick="this.closest('#mercadoPagoModal').remove(); resolve({success: false, error: 'Pagamento cancelado'})" 
+                                class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            Cancelar
+                        </button>
+                        <button id="mpPayButton" onclick="window.mpBrickController?.getFormData()" disabled
+                                class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium">
+                            💳 Pagar Agora
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return modal;
+    }
+
+    // Inicializar Mercado Pago
+    async initializeMercadoPago(specialtyData, resolve) {
+        try {
+            // Carregar SDK do Mercado Pago se não estiver carregado
+            if (!window.MercadoPago) {
+                await this.loadMercadoPagoSDK();
+            }
+
+            // Configurar Mercado Pago
+            const mp = new MercadoPago('TEST-f3632b3e-aaf2-439b-89ee-d445d6acf932', {
+                locale: 'pt-BR'
+            });
+
+            // Configurar Card Payment Brick
+            const bricksBuilder = mp.bricks();
+            
+            const renderCardPaymentBrick = async () => {
+                // Validar dados obrigatórios
+                const amount = parseFloat(specialtyData?.price || 0);
+                const email = this.currentUser?.email || 'test@test.com';
+                
+                console.log('💰 Configurando pagamento:', { amount, email, specialtyData });
+                
+                if (!amount || amount <= 0) {
+                    throw new Error('Valor da consulta inválido');
+                }
+
+                const settings = {
+                    initialization: {
+                        amount: amount,
+                        payer: {
+                            email: email
+                        }
+                    },
+                    customization: {
+                        visual: {
+                            style: {
+                                theme: 'default'
+                            }
+                        },
+                        paymentMethods: {
+                            creditCard: 'all',
+                            debitCard: 'all'
+                        }
+                    },
+                    callbacks: {
+                        onReady: () => {
+                            console.log('✅ Mercado Pago Brick carregado');
+                            document.getElementById('mpLoading').style.display = 'none';
+                            document.getElementById('mpPayButton').disabled = false;
+                            
+                            // Dados carregados - botão de preenchimento disponível
+                        },
+                        onSubmit: async (cardFormData) => {
+                            console.log('💳 Processando pagamento...', cardFormData);
+                            
+                            try {
+                                // Processar pagamento
+                                const paymentResult = await this.processMercadoPagoPayment(cardFormData, specialtyData);
+                                
+                                // Fechar modal
+                                document.getElementById('mercadoPagoModal').remove();
+                                
+                                // Resolver promise
+                                resolve(paymentResult);
+                                
+                            } catch (error) {
+                                console.error('❌ Erro no pagamento:', error);
+                                alert('Erro no pagamento: ' + error.message);
+                                resolve({
+                                    success: false,
+                                    error: error.message
+                                });
+                            }
+                        },
+                        onError: (error) => {
+                            console.error('❌ Erro no Mercado Pago Brick:', error);
+                            alert('Erro no formulário de pagamento. Tente novamente.');
+                        }
+                    }
+                };
+
+                window.mpBrickController = await bricksBuilder.create('cardPayment', 'cardPaymentBrick_container', settings);
+            };
+
+            await renderCardPaymentBrick();
+
+        } catch (error) {
+            console.error('❌ Erro ao inicializar Mercado Pago:', error);
+            document.getElementById('mpLoading').innerHTML = `
+                <div class="text-center py-8 text-red-600">
+                    <div class="text-4xl mb-2">❌</div>
+                    <p>Erro ao carregar pagamento</p>
+                    <p class="text-sm mt-2">${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    // Carregar SDK do Mercado Pago
+    loadMercadoPagoSDK() {
+        return new Promise((resolve, reject) => {
+            if (window.MercadoPago) {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://sdk.mercadopago.com/js/v2';
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Falha ao carregar SDK do Mercado Pago'));
+            document.head.appendChild(script);
+        });
+    }
+
+    // Processar pagamento no Mercado Pago
+    async processMercadoPagoPayment(cardFormData, specialtyData) {
+        try {
+            console.log('🔄 Enviando dados para processamento...');
+
+            // Simular chamada para backend (você deve implementar seu backend)
+            const paymentData = {
+                token: cardFormData.token,
+                transaction_amount: parseFloat(specialtyData?.price || 0),
+                description: `Consulta - ${specialtyData?.name || 'Consulta Médica'}`,
+                payment_method_id: cardFormData.payment_method_id,
+                payer: {
+                    email: this.currentUser?.email || 'test@test.com'
+                },
+                installments: cardFormData.installments,
+                issuer_id: cardFormData.issuer_id
+            };
+
+            // Por enquanto, simular sucesso (você deve implementar a chamada real para seu backend)
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Simular resposta do Mercado Pago
+            const success = Math.random() > 0.1; // 90% de sucesso
+
+            if (success) {
+                return {
+                    success: true,
+                    transactionId: 'MP_' + Date.now(),
+                    paymentMethod: cardFormData.payment_method_id,
+                    amount: specialtyData?.price || 0,
+                    status: 'approved',
+                    mercadoPagoData: paymentData
+                };
+            } else {
+                throw new Error('Pagamento recusado. Verifique os dados do cartão.');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro no processamento:', error);
+            throw error;
+        }
+    }
+
+    // Simular pagamento (fallback)
     async simulatePayment(specialtyData, paymentData) {
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -185,15 +486,15 @@ class RealTimeQueueSystem {
         try {
             const appointmentData = {
                 patient_id: this.currentUser.id,
-                specialty_id: specialtyData.id,
+                specialty_id: specialtyData?.id || null,
                 scheduled_date: new Date().toISOString().split('T')[0],
                 scheduled_time: new Date().toTimeString().split(' ')[0],
-                duration: specialtyData.duration || 30,
-                status: 'paid',
+                duration: specialtyData?.duration || 30,
+                status: 'scheduled', // Changed from 'paid' to 'scheduled' (valid status)
                 type: 'video',
-                price: specialtyData.price,
-                payment_id: paymentResult.transactionId,
-                created_at: new Date().toISOString()
+                price: specialtyData?.price || 0,
+                payment_id: paymentResult.transactionId
+                // Removed created_at as it has a default value
             };
 
             const { data, error } = await supabase
@@ -908,11 +1209,716 @@ class RealTimeQueueSystem {
         this.clearQueue();
         alert('Você foi removido da fila. Entre em contato com o suporte se isso foi um erro.');
     }
+
+    // Função otimizada para preencher campos específicos do Mercado Pago
+    fillTestDataFixed() {
+        console.log('⚡ Preenchendo campos específicos do Mercado Pago (versão otimizada)...');
+        
+        // Dados de teste do Mercado Pago
+        const testData = {
+            cardNumber: '5031433215406351',
+            cardholderName: 'TESTUSER1621783976',
+            expirationDate: '11/30', // Formato MM/YY para campo único
+            expirationMonth: '11',
+            expirationYear: '30',
+            securityCode: '123',
+            identificationNumber: '12345678909'
+        };
+
+        // Função para simular digitação real
+        const fillField = (element, value, delay = 0) => {
+            if (!element) return false;
+            
+            setTimeout(() => {
+                console.log(`Preenchendo campo:`, element.name || element.placeholder, 'com valor:', value);
+                
+                element.focus();
+                element.click();
+                element.value = '';
+                
+                // Simular digitação caractere por caractere
+                let currentValue = '';
+                for (let i = 0; i < value.length; i++) {
+                    setTimeout(() => {
+                        currentValue += value[i];
+                        element.value = currentValue;
+                        
+                        // Disparar eventos
+                        element.dispatchEvent(new Event('input', { bubbles: true }));
+                        element.dispatchEvent(new Event('change', { bubbles: true }));
+                        
+                        // Se é o último caractere
+                        if (i === value.length - 1) {
+                            element.blur();
+                        }
+                    }, i * 30);
+                }
+            }, delay);
+            
+            return true;
+        };
+
+        // Procurar e preencher campos
+        setTimeout(() => {
+            const container = document.getElementById('cardPaymentBrick_container');
+            if (!container) {
+                console.log('❌ Container do Mercado Pago não encontrado');
+                this.showAutoFillNotification('❌ Formulário não encontrado', 'error');
+                return;
+            }
+
+            const allInputs = container.querySelectorAll('input, select');
+            console.log(`📋 Encontrados ${allInputs.length} campos no formulário`);
+
+            let filledCount = 0;
+            let delay = 0;
+
+            // Mapear campos por name exato
+            allInputs.forEach((input, index) => {
+                const name = (input.name || '').toLowerCase();
+                const placeholder = (input.placeholder || '').toLowerCase();
+                const inputMode = (input.inputMode || '').toLowerCase();
+                
+                console.log(`Campo ${index}:`, {
+                    name: input.name,
+                    placeholder: input.placeholder,
+                    inputMode: input.inputMode,
+                    type: input.type
+                });
+
+                // Identificar campos por placeholder (baseado na imagem do formulário)
+                if (placeholder.includes('1234 1234 1234 1234') || placeholder.includes('1234')) {
+                    if (fillField(input, testData.cardNumber, delay)) {
+                        filledCount++;
+                        console.log('✅ Número do cartão preenchido');
+                        delay += 200;
+                    }
+                }
+                else if (placeholder.includes('mm/aa') || placeholder.includes('mm/yy')) {
+                    if (fillField(input, testData.expirationDate, delay)) {
+                        filledCount++;
+                        console.log('✅ Data de vencimento preenchida');
+                        delay += 200;
+                    }
+                }
+                else if (placeholder.includes('ex.: 123') || placeholder.includes('123') || placeholder.includes('cvv')) {
+                    if (fillField(input, testData.securityCode, delay)) {
+                        filledCount++;
+                        console.log('✅ Código de segurança preenchido');
+                        delay += 200;
+                    }
+                }
+                else if (name === 'holder_name' || (inputMode === 'text' && !placeholder.includes('1234'))) {
+                    if (fillField(input, testData.cardholderName, delay)) {
+                        filledCount++;
+                        console.log('✅ Nome do titular preenchido');
+                        delay += 200;
+                    }
+                }
+                else if (name === 'document' || (inputMode === 'numeric' && placeholder.includes('999.999.999'))) {
+                    if (fillField(input, testData.identificationNumber, delay)) {
+                        filledCount++;
+                        console.log('✅ CPF preenchido');
+                        delay += 200;
+                    }
+                }
+                // Identificação por name como fallback
+                else if (name === 'cardnumber' || name === 'card_number') {
+                    if (fillField(input, testData.cardNumber, delay)) {
+                        filledCount++;
+                        console.log('✅ Número do cartão preenchido (name)');
+                        delay += 200;
+                    }
+                }
+                else if (name === 'expirationdate' || name === 'expiration_date') {
+                    if (fillField(input, testData.expirationDate, delay)) {
+                        filledCount++;
+                        console.log('✅ Data de vencimento preenchida (name)');
+                        delay += 200;
+                    }
+                }
+                else if (name === 'securitycode' || name === 'security_code') {
+                    if (fillField(input, testData.securityCode, delay)) {
+                        filledCount++;
+                        console.log('✅ Código de segurança preenchido (name)');
+                        delay += 200;
+                    }
+                }
+            });
+
+            // Resultado final
+            setTimeout(() => {
+                if (filledCount > 0) {
+                    console.log(`✅ ${filledCount} campos preenchidos automaticamente`);
+                    this.showAutoFillNotification(`✅ ${filledCount} campos preenchidos!`, 'success');
+                } else {
+                    console.log('⚠️ Nenhum campo foi preenchido automaticamente');
+                    this.showAutoFillNotification('⚠️ Preencha manualmente', 'warning');
+                }
+            }, 1500);
+        }, 500);
+    }
+
+    // Função para preencher dados de teste (chamada pelo botão)
+    fillTestData() {
+        console.log('⚡ Preenchendo dados de teste do Mercado Pago...');
+        
+        // Dados de teste do Mercado Pago
+        const testData = {
+            cardNumber: '5031433215406351',
+            cardholderName: 'TESTUSER1621783976',
+            expirationMonth: '11',
+            expirationYear: '30',
+            securityCode: '123',
+            identificationNumber: '12345678909'
+        };
+
+        // Função para simular digitação real
+        const simulateTyping = (element, value, delay = 0) => {
+            if (!element) return false;
+            
+            setTimeout(() => {
+                element.focus();
+                element.click();
+                element.value = '';
+                
+                // Simular digitação caractere por caractere
+                let currentValue = '';
+                for (let i = 0; i < value.length; i++) {
+                    setTimeout(() => {
+                        currentValue += value[i];
+                        element.value = currentValue;
+                        
+                        // Disparar eventos
+                        element.dispatchEvent(new Event('input', { bubbles: true }));
+                        element.dispatchEvent(new Event('change', { bubbles: true }));
+                        
+                        // Se é o último caractere
+                        if (i === value.length - 1) {
+                            element.blur();
+                        }
+                    }, i * 30);
+                }
+            }, delay);
+            
+            return true;
+        };
+
+        // Função para identificar o tipo de campo baseada nas informações fornecidas
+        const identifyFieldType = (element) => {
+            const placeholder = (element.placeholder || '').toLowerCase();
+            const name = (element.name || '').toLowerCase();
+            const id = (element.id || '').toLowerCase();
+            const autocomplete = (element.autocomplete || '').toLowerCase();
+            const type = element.type || '';
+            const inputMode = (element.inputMode || '').toLowerCase();
+            const maxLength = element.maxLength;
+            
+            // Log para debug
+            console.log('Analisando campo:', {
+                placeholder,
+                name,
+                id,
+                autocomplete,
+                type,
+                inputMode,
+                maxLength,
+                element
+            });
+            
+            // Identificar número do cartão - name="cardNumber" (exato)
+            if (
+                name === 'cardnumber' ||
+                name === 'card_number' ||
+                name.includes('cardnumber') ||
+                placeholder.includes('número do cartão') ||
+                placeholder.includes('numero do cartao') ||
+                placeholder.includes('1234') ||
+                autocomplete.includes('cc-number')
+            ) {
+                return 'cardNumber';
+            }
+            
+            // Identificar nome no cartão - name="holder_name" ou inputmode="text"
+            if (
+                name === 'holder_name' ||
+                name.includes('holder_name') ||
+                inputMode === 'text' ||
+                placeholder.includes('nome do titular') ||
+                placeholder.includes('titular') ||
+                placeholder.includes('nome') ||
+                placeholder.includes('maria santos') ||
+                autocomplete.includes('cc-name')
+            ) {
+                return 'cardholderName';
+            }
+            
+            // Identificar código de segurança - name="securityCode" (exato)
+            if (
+                name === 'securitycode' ||
+                name === 'security_code' ||
+                name.includes('securitycode') ||
+                placeholder.includes('código de segurança') ||
+                placeholder.includes('codigo de seguranca') ||
+                placeholder.includes('cvv') ||
+                placeholder.includes('cvc') ||
+                autocomplete.includes('cc-csc')
+            ) {
+                return 'securityCode';
+            }
+            
+            // Identificar ano de vencimento - name="expirationYear"
+            if (
+                name === 'expirationyear' ||
+                name.includes('expirationyear') ||
+                placeholder.includes('ano de vencimento') ||
+                placeholder.includes('ano') ||
+                placeholder.includes('aa') ||
+                placeholder.includes('yy') ||
+                autocomplete.includes('cc-exp-year')
+            ) {
+                return 'expirationYear';
+            }
+            
+            // Identificar mês de vencimento - name="expirationMonth" ou select
+            if (
+                name === 'expirationmonth' ||
+                name.includes('expirationmonth') ||
+                placeholder.includes('mês de vencimento') ||
+                placeholder.includes('mes de vencimento') ||
+                placeholder.includes('mês') ||
+                placeholder.includes('mm') ||
+                autocomplete.includes('cc-exp-month') ||
+                (type === 'select-one' && element.options && element.options.length <= 13) // Select com meses
+            ) {
+                return 'expirationMonth';
+            }
+            
+            // Identificar data de vencimento - name="expirationDate" (exato)
+            if (
+                name === 'expirationdate' ||
+                name === 'expiration_date' ||
+                name.includes('expirationdate') ||
+                placeholder.includes('data de vencimento') ||
+                placeholder.includes('mm/aa') ||
+                placeholder.includes('mm/yy') ||
+                placeholder.includes('validade')
+            ) {
+                return 'expirationDate';
+            }
+            
+            // Identificar CPF - name="document" ou inputmode="numeric"
+            if (
+                name === 'document' ||
+                name.includes('document') ||
+                inputMode === 'numeric' ||
+                placeholder.includes('cpf') ||
+                placeholder.includes('documento') ||
+                placeholder.includes('identification') ||
+                placeholder.includes('999.999.999-99') ||
+                name.includes('identification') ||
+                name.includes('cpf')
+            ) {
+                return 'identificationNumber';
+            }
+            
+            return 'unknown';
+        };
+
+        // Procurar e preencher campos
+        setTimeout(() => {
+            const container = document.getElementById('cardPaymentBrick_container');
+            if (!container) {
+                console.log('❌ Container do Mercado Pago não encontrado');
+                this.showAutoFillNotification('❌ Formulário não encontrado', 'error');
+                return;
+            }
+
+            const allInputs = container.querySelectorAll('input, select');
+            console.log(`📋 Encontrados ${allInputs.length} campos no formulário`);
+
+            // Mapear campos por tipo identificado
+            const fieldMap = {};
+            allInputs.forEach((input, index) => {
+                const fieldType = identifyFieldType(input);
+                console.log(`Campo ${index}: ${fieldType}`);
+                
+                if (fieldType !== 'unknown') {
+                    fieldMap[fieldType] = input;
+                }
+            });
+
+            console.log('Mapeamento de campos:', fieldMap);
+
+            let filledCount = 0;
+            let delay = 0;
+
+            // Preencher campos identificados
+            const fillOrder = [
+                { type: 'cardNumber', value: testData.cardNumber, name: 'Número do Cartão' },
+                { type: 'cardholderName', value: testData.cardholderName, name: 'Nome no Cartão' },
+                { type: 'expirationDate', value: `${testData.expirationMonth}/${testData.expirationYear}`, name: 'Data de Vencimento' },
+                { type: 'expirationMonth', value: testData.expirationMonth, name: 'Mês de Expiração' },
+                { type: 'expirationYear', value: testData.expirationYear, name: 'Ano de Expiração' },
+                { type: 'securityCode', value: testData.securityCode, name: 'Código de Segurança' },
+                { type: 'identificationNumber', value: testData.identificationNumber, name: 'CPF' }
+            ];
+
+            fillOrder.forEach(({ type, value, name }) => {
+                if (fieldMap[type]) {
+                    if (simulateTyping(fieldMap[type], value, delay)) {
+                        filledCount++;
+                        console.log(`✅ ${name} preenchido`);
+                        delay += 200; // Delay entre campos
+                    }
+                } else {
+                    console.log(`⚠️ Campo ${name} não encontrado`);
+                }
+            });
+
+            // Se não conseguiu identificar campos, tentar por posição como fallback
+            if (filledCount === 0 && allInputs.length >= 4) {
+                console.log('🔄 Tentando preenchimento por posição como fallback...');
+                
+                // Assumir ordem padrão do Mercado Pago
+                const fallbackMappings = [
+                    { index: 0, value: testData.cardNumber, name: 'Número do Cartão (pos 0)' },
+                    { index: 1, value: testData.cardholderName, name: 'Nome no Cartão (pos 1)' },
+                    { index: 2, value: testData.expirationMonth, name: 'Mês (pos 2)' },
+                    { index: 3, value: testData.expirationYear, name: 'Ano (pos 3)' },
+                    { index: 4, value: testData.securityCode, name: 'CVV (pos 4)' },
+                    { index: 5, value: testData.identificationNumber, name: 'CPF (pos 5)' }
+                ];
+
+                fallbackMappings.forEach(({ index, value, name }) => {
+                    if (allInputs[index]) {
+                        if (simulateTyping(allInputs[index], value, index * 200)) {
+                            filledCount++;
+                            console.log(`✅ ${name} preenchido por fallback`);
+                        }
+                    }
+                });
+            }
+
+            // Resultado
+            setTimeout(() => {
+                if (filledCount > 0) {
+                    console.log(`✅ ${filledCount} campos preenchidos`);
+                    this.showAutoFillNotification(`✅ ${filledCount} campos preenchidos!`, 'success');
+                } else {
+                    console.log('⚠️ Nenhum campo foi preenchido');
+                    this.showAutoFillNotification('⚠️ Preencha manualmente', 'warning');
+                    
+                    // Mostrar informações dos campos para debug
+                    console.log('📋 Campos encontrados para debug:');
+                    allInputs.forEach((input, index) => {
+                        console.log(`Campo ${index}:`, {
+                            placeholder: input.placeholder,
+                            name: input.name,
+                            id: input.id,
+                            type: input.type,
+                            autocomplete: input.autocomplete
+                        });
+                    });
+                }
+            }, 2000);
+        }, 500);
+    }
+
+    // Auto-preencher dados de teste do Mercado Pago para MVP
+    autoFillTestCardData() {
+        try {
+            console.log('🔄 Preenchendo dados de teste do Mercado Pago...');
+            
+            // Dados de teste do Mercado Pago
+            const testCardData = {
+                cardNumber: '5031433215406351', // Sem espaços para o Mercado Pago
+                cardholderName: 'TESTUSER1621783976',
+                expirationMonth: '11',
+                expirationYear: '30',
+                securityCode: '123',
+                identificationType: 'CPF',
+                identificationNumber: '12345678909'
+            };
+
+            // Função para preencher campo com simulação de digitação real
+            const fillFieldAdvanced = (element, value) => {
+                if (!element) return false;
+                
+                // Focar no campo
+                element.focus();
+                element.click();
+                
+                // Limpar campo existente
+                element.value = '';
+                
+                // Simular digitação caractere por caractere
+                let currentValue = '';
+                for (let i = 0; i < value.length; i++) {
+                    currentValue += value[i];
+                    element.value = currentValue;
+                    
+                    // Disparar eventos para cada caractere
+                    element.dispatchEvent(new KeyboardEvent('keydown', { key: value[i], bubbles: true }));
+                    element.dispatchEvent(new KeyboardEvent('keypress', { key: value[i], bubbles: true }));
+                    element.dispatchEvent(new Event('input', { bubbles: true }));
+                    element.dispatchEvent(new KeyboardEvent('keyup', { key: value[i], bubbles: true }));
+                }
+                
+                // Eventos finais
+                element.dispatchEvent(new Event('change', { bubbles: true }));
+                element.dispatchEvent(new Event('blur', { bubbles: true }));
+                
+                return true;
+            };
+
+            // Tentar múltiplas vezes com diferentes delays
+            const attemptFill = (attempt = 1) => {
+                console.log(`🔄 Tentativa ${attempt} de preenchimento...`);
+                
+                // Procurar pelo container do Mercado Pago Brick
+                const brickContainer = document.getElementById('cardPaymentBrick_container');
+                if (!brickContainer) {
+                    console.log('❌ Container do Mercado Pago não encontrado');
+                    return;
+                }
+                
+                console.log('✅ Container do Mercado Pago encontrado');
+                
+                // Seletores mais específicos para o Mercado Pago Brick atual
+                const fieldSelectors = [
+                    // Número do cartão - múltiplas variações
+                    { 
+                        selectors: [
+                            'input[name="cardNumber"]',
+                            'input[data-testid="form-input-cardNumber"]',
+                            'input[placeholder*="1234"]',
+                            'input[placeholder*="número"]',
+                            'input[placeholder*="Número"]',
+                            'input[autocomplete="cc-number"]',
+                            'input[type="tel"][maxlength="19"]',
+                            '#cardNumber',
+                            '.card-number-input'
+                        ], 
+                        value: testCardData.cardNumber,
+                        name: 'Número do Cartão'
+                    },
+                    
+                    // Nome no cartão
+                    { 
+                        selectors: [
+                            'input[name="cardholderName"]',
+                            'input[data-testid="form-input-cardholderName"]',
+                            'input[placeholder*="nome"]',
+                            'input[placeholder*="Nome"]',
+                            'input[autocomplete="cc-name"]',
+                            '#cardholderName',
+                            '.cardholder-name-input'
+                        ], 
+                        value: testCardData.cardholderName,
+                        name: 'Nome no Cartão'
+                    },
+                    
+                    // Mês de expiração
+                    { 
+                        selectors: [
+                            'input[name="cardExpirationMonth"]',
+                            'select[name="cardExpirationMonth"]',
+                            'input[data-testid="form-input-cardExpirationMonth"]',
+                            'input[placeholder*="MM"]',
+                            'input[autocomplete="cc-exp-month"]',
+                            '#cardExpirationMonth'
+                        ], 
+                        value: testCardData.expirationMonth,
+                        name: 'Mês de Expiração'
+                    },
+                    
+                    // Ano de expiração
+                    { 
+                        selectors: [
+                            'input[name="cardExpirationYear"]',
+                            'select[name="cardExpirationYear"]',
+                            'input[data-testid="form-input-cardExpirationYear"]',
+                            'input[placeholder*="AA"]',
+                            'input[placeholder*="YY"]',
+                            'input[autocomplete="cc-exp-year"]',
+                            '#cardExpirationYear'
+                        ], 
+                        value: testCardData.expirationYear,
+                        name: 'Ano de Expiração'
+                    },
+                    
+                    // Código de segurança
+                    { 
+                        selectors: [
+                            'input[name="securityCode"]',
+                            'input[data-testid="form-input-securityCode"]',
+                            'input[placeholder*="CVV"]',
+                            'input[placeholder*="CVC"]',
+                            'input[placeholder*="código"]',
+                            'input[autocomplete="cc-csc"]',
+                            '#securityCode',
+                            '.security-code-input'
+                        ], 
+                        value: testCardData.securityCode,
+                        name: 'Código de Segurança'
+                    },
+                    
+                    // CPF
+                    { 
+                        selectors: [
+                            'input[name="identificationType"]',
+                            'input[name="identificationNumber"]',
+                            'input[data-testid="form-input-identificationNumber"]',
+                            'input[placeholder*="CPF"]',
+                            'input[placeholder*="documento"]',
+                            '#identificationNumber',
+                            '.identification-input'
+                        ], 
+                        value: testCardData.identificationNumber,
+                        name: 'CPF'
+                    }
+                ];
+
+                let filledFields = 0;
+                
+                // Tentar preencher cada tipo de campo
+                fieldSelectors.forEach(({ selectors, value, name }) => {
+                    let fieldFilled = false;
+                    
+                    for (const selector of selectors) {
+                        const field = document.querySelector(selector);
+                        if (field && !fieldFilled) {
+                            if (fillFieldAdvanced(field, value)) {
+                                filledFields++;
+                                fieldFilled = true;
+                                console.log(`✅ ${name} preenchido: ${selector} = ${value}`);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!fieldFilled) {
+                        console.log(`⚠️ ${name} não encontrado`);
+                    }
+                });
+
+                // Procurar em todos os inputs visíveis como fallback
+                if (filledFields === 0) {
+                    console.log('🔍 Procurando campos por fallback...');
+                    
+                    const allInputs = brickContainer.querySelectorAll('input');
+                    console.log(`📋 Encontrados ${allInputs.length} inputs no container`);
+                    
+                    allInputs.forEach((input, index) => {
+                        console.log(`Input ${index}:`, {
+                            name: input.name,
+                            placeholder: input.placeholder,
+                            type: input.type,
+                            id: input.id,
+                            className: input.className
+                        });
+                    });
+                    
+                    // Tentar preencher por posição (método de último recurso)
+                    if (allInputs.length >= 4) {
+                        const fieldMappings = [
+                            { index: 0, value: testCardData.cardNumber, name: 'Número do Cartão (pos 0)' },
+                            { index: 1, value: testCardData.cardholderName, name: 'Nome no Cartão (pos 1)' },
+                            { index: 2, value: testCardData.expirationMonth, name: 'Mês (pos 2)' },
+                            { index: 3, value: testCardData.expirationYear, name: 'Ano (pos 3)' },
+                            { index: 4, value: testCardData.securityCode, name: 'CVV (pos 4)' },
+                            { index: 5, value: testCardData.identificationNumber, name: 'CPF (pos 5)' }
+                        ];
+                        
+                        fieldMappings.forEach(({ index, value, name }) => {
+                            if (allInputs[index]) {
+                                if (fillFieldAdvanced(allInputs[index], value)) {
+                                    filledFields++;
+                                    console.log(`✅ ${name} preenchido por posição`);
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Resultado final
+                if (filledFields > 0) {
+                    console.log(`✅ ${filledFields} campos preenchidos automaticamente`);
+                    
+                    // Mostrar notificação de sucesso
+                    this.showAutoFillNotification(`✅ ${filledFields} campos preenchidos automaticamente!`, 'success');
+                    
+                } else {
+                    console.log('⚠️ Nenhum campo foi preenchido automaticamente');
+                    
+                    // Tentar novamente se for a primeira tentativa
+                    if (attempt < 3) {
+                        setTimeout(() => attemptFill(attempt + 1), 2000);
+                    } else {
+                        this.showAutoFillNotification('⚠️ Preencha os dados manualmente', 'warning');
+                    }
+                }
+            };
+
+            // Iniciar tentativas de preenchimento
+            setTimeout(() => attemptFill(1), 1500);
+
+        } catch (error) {
+            console.error('❌ Erro ao preencher dados de teste:', error);
+            this.showAutoFillNotification('❌ Erro no preenchimento automático', 'error');
+        }
+    }
+
+    // Mostrar notificação de preenchimento automático
+    showAutoFillNotification(message, type = 'success') {
+        const colors = {
+            success: { bg: '#10b981', text: 'white' },
+            warning: { bg: '#f59e0b', text: 'white' },
+            error: { bg: '#ef4444', text: 'white' }
+        };
+        
+        const color = colors[type] || colors.success;
+        
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${color.bg};
+            color: ${color.text};
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(100%);
+            transition: transform 0.3s ease-out;
+        `;
+        notification.innerHTML = message;
+        
+        document.body.appendChild(notification);
+        
+        // Animar entrada
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Remover após 4 segundos
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 4000);
+    }
 }
 
 // Inicializar sistema quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
     window.realTimeQueue = new RealTimeQueueSystem();
+    window.currentRealTimeQueue = window.realTimeQueue; // Para acesso no botão
 });
 
 // Exportar para uso em outros módulos

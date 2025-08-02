@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Appointment Creation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-6">Test Appointment Creation</h1>
+        
+        <div class="mb-4">
+            <h3 class="font-bold mb-2">Test Data:</h3>
+            <pre id="testData" class="bg-gray-100 p-3 rounded text-sm"></pre>
+        </div>
+        
+        <button onclick="testAppointmentCreation()" 
+                class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition">
+            Test Appointment Creation
+        </button>
+        
+        <div id="results" class="mt-4 p-3 rounded hidden"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    
+    <script>
+        // Test data
+        const testSpecialty = {
+            id: 'af5a712c-3ecf-4b51-952f-b7924fed0fc0', // Real specialty ID from your database
+            name: 'Clínica Geral',
+            description: 'Consulta médica geral para diagnóstico e tratamento',
+            icon: '🩺',
+            price: 80,
+            duration: 30
+        };
+        
+        const testPaymentResult = {
+            success: true,
+            transactionId: 'TEST_' + Date.now(),
+            paymentMethod: 'credit_card',
+            amount: 80,
+            status: 'approved'
+        };
+        
+        document.getElementById('testData').textContent = JSON.stringify({
+            specialty: testSpecialty,
+            paymentResult: testPaymentResult
+        }, null, 2);
+        
+        async function testAppointmentCreation() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.className = 'mt-4 p-3 rounded bg-blue-50 border border-blue-200';
+            resultsDiv.innerHTML = '<p class="text-blue-800">🔄 Testing appointment creation...</p>';
+            
+            try {
+                // Get current user
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    throw new Error('User not authenticated');
+                }
+                
+                console.log('Current user:', user.id);
+                
+                // Test appointment data
+                const appointmentData = {
+                    patient_id: user.id,
+                    specialty_id: testSpecialty.id,
+                    scheduled_date: new Date().toISOString().split('T')[0],
+                    scheduled_time: new Date().toTimeString().split(' ')[0],
+                    duration: testSpecialty.duration || 30,
+                    status: 'scheduled', // Valid status
+                    type: 'video',
+                    price: testSpecialty.price || 0,
+                    payment_id: testPaymentResult.transactionId
+                };
+                
+                console.log('Appointment data:', appointmentData);
+                
+                // Test database insertion
+                const { data, error } = await supabase
+                    .from('appointments')
+                    .insert([appointmentData])
+                    .select(`
+                        *,
+                        specialties (name, icon, description)
+                    `)
+                    .single();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                console.log('Appointment created:', data);
+                
+                resultsDiv.className = 'mt-4 p-3 rounded bg-green-50 border border-green-200';
+                resultsDiv.innerHTML = `
+                    <p class="text-green-800 font-bold">✅ Appointment Creation Test Passed!</p>
+                    <ul class="text-green-700 text-sm mt-2">
+                        <li>✓ User authenticated: ${user.email}</li>
+                        <li>✓ Appointment created: ${data.id}</li>
+                        <li>✓ Status: ${data.status}</li>
+                        <li>✓ Price: R$ ${data.price}</li>
+                        <li>✓ Specialty: ${data.specialties?.name}</li>
+                    </ul>
+                `;
+                
+            } catch (error) {
+                console.error('Appointment creation test failed:', error);
+                resultsDiv.className = 'mt-4 p-3 rounded bg-red-50 border border-red-200';
+                resultsDiv.innerHTML = `
+                    <p class="text-red-800 font-bold">❌ Appointment Creation Test Failed!</p>
+                    <p class="text-red-700 text-sm mt-2">Error: ${error.message}</p>
+                    <pre class="text-red-600 text-xs mt-2 bg-red-100 p-2 rounded">${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

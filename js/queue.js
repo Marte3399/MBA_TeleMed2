@@ -176,8 +176,9 @@ class QueueSystem {
         `;
 
         document.body.insertAdjacentHTML('beforeend', queueHTML);
-    }    /
-/ Mostrar interface da fila
+    }
+
+    // Mostrar interface da fila
     async showQueueInterface(appointmentId) {
         try {
             // Buscar dados da consulta
@@ -428,15 +429,7 @@ class QueueSystem {
             // Criar container para Jitsi
             const jitsiContainer = document.createElement('div');
             jitsiContainer.id = 'jitsi-container';
-            jitsiContainer.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 9999;
-                background: #000;
-            `;
+            jitsiContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: #000;';
             document.body.appendChild(jitsiContainer);
 
             // Inicializar Jitsi Meet

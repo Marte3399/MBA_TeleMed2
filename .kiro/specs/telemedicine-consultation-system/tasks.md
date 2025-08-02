@@ -74,6 +74,9 @@
 
 
 
+
+
+
   - Implementar entrada automática na fila após pagamento confirmado
   - Desenvolver interface de exibição de posição na fila
   - Criar sistema de atualizações em tempo real usando Supabase subscriptions
@@ -82,6 +85,9 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
 - [ ] 7. Desenvolver sistema de notificações multi-canal
+
+
+
   - Implementar notificações push do navegador
   - Integrar WhatsApp API para mensagens de confirmação
   - Criar sistema de email para confirmações e lembretes

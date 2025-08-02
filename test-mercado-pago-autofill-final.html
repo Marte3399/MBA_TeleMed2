@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Auto-preenchimento Mercado Pago - Versão Final</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">
+                🧪 Teste Auto-preenchimento Mercado Pago - Versão Final
+            </h1>
+
+            <!-- Informações de Teste -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 class="font-bold text-blue-800 mb-2">📋 Dados de Teste:</h3>
+                <div class="text-sm text-blue-700 space-y-1">
+                    <div><strong>Cartão:</strong> 5031 4332 1540 6351</div>
+                    <div><strong>Nome:</strong> TESTUSER1621783976</div>
+                    <div><strong>Vencimento:</strong> 11/30</div>
+                    <div><strong>CVV:</strong> 123</div>
+                    <div><strong>CPF:</strong> 12345678909</div>
+                </div>
+            </div>
+
+            <!-- Botão de Teste -->
+            <div class="text-center mb-6">
+                <button onclick="initializeMercadoPago()" 
+                        class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    🚀 Inicializar Mercado Pago
+                </button>
+                
+                <button onclick="testAutoFill()" 
+                        class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium ml-4">
+                    ⚡ Testar Auto-preenchimento
+                </button>
+            </div>
+
+            <!-- Container do Mercado Pago -->
+            <div id="cardPaymentBrick_container" class="mb-6">
+                <!-- Mercado Pago form will be loaded here -->
+            </div>
+
+            <!-- Log de Debug -->
+            <div class="bg-gray-50 border rounded-lg p-4">
+                <h3 class="font-bold text-gray-800 mb-2">📝 Log de Debug:</h3>
+                <div id="debugLog" class="text-sm text-gray-700 font-mono max-h-64 overflow-y-auto">
+                    Aguardando inicialização...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Auto-preenchimento -->
+    <script src="js/mercado-pago-autofill-final.js"></script>
+
+    <script>
+        let mp;
+        let bricksBuilder;
+
+        // Função para adicionar log
+        function addLog(message) {
+            const logDiv = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Inicializar Mercado Pago
+        async function initializeMercadoPago() {
+            try {
+                addLog('🔄 Inicializando Mercado Pago...');
+
+                // Usar chave pública de teste
+                mp = new MercadoPago('TEST-a835b0a6-7b8b-4c2b-9c4a-8f7e6d5c4b3a', {
+                    locale: 'pt-BR'
+                });
+
+                bricksBuilder = mp.bricks();
+
+                addLog('✅ Mercado Pago inicializado');
+
+                // Criar formulário de pagamento
+                await createPaymentForm();
+
+            } catch (error) {
+                addLog(`❌ Erro na inicialização: ${error.message}`);
+            }
+        }
+
+        // Criar formulário de pagamento
+        async function createPaymentForm() {
+            try {
+                addLog('🔄 Criando formulário de pagamento...');
+
+                const renderCardPaymentBrick = async (bricksBuilder) => {
+                    const settings = {
+                        initialization: {
+                            amount: 50.00,
+                        },
+                        customization: {
+                            visual: {
+                                style: {
+                                    customVariables: {
+                                        theme: 'default'
+                                    }
+                                }
+                            }
+                        },
+                        callbacks: {
+                            onReady: () => {
+                                addLog('✅ Formulário de pagamento carregado');
+                                
+                                // Aguardar um pouco e mostrar campos encontrados
+                                setTimeout(() => {
+                                    analyzeForm();
+                                }, 1000);
+                            },
+                            onSubmit: (cardFormData) => {
+                                addLog('📤 Dados do formulário enviados');
+                                console.log('Card form data:', cardFormData);
+                                return new Promise((resolve, reject) => {
+                                    addLog('✅ Pagamento processado com sucesso (simulação)');
+                                    resolve();
+                                });
+                            },
+                            onError: (error) => {
+                                addLog(`❌ Erro no formulário: ${error.message}`);
+                            }
+                        }
+                    };
+
+                    const cardPaymentBrickController = await bricksBuilder.create('cardPayment', 'cardPaymentBrick_container', settings);
+                };
+
+                await renderCardPaymentBrick(bricksBuilder);
+
+            } catch (error) {
+                addLog(`❌ Erro ao criar formulário: ${error.message}`);
+            }
+        }
+
+        // Analisar formulário
+        function analyzeForm() {
+            const container = document.getElementById('cardPaymentBrick_container');
+            if (!container) {
+                addLog('❌ Container não encontrado');
+                return;
+            }
+
+            const inputs = container.querySelectorAll('input');
+            addLog(`📋 Encontrados ${inputs.length} campos de input`);
+
+            inputs.forEach((input, index) => {
+                const info = {
+                    index,
+                    placeholder: input.placeholder || 'sem placeholder',
+                    name: input.name || 'sem name',
+                    type: input.type || 'sem type',
+                    maxLength: input.maxLength || 'sem maxLength',
+                    value: input.value || 'vazio'
+                };
+                addLog(`Campo ${index}: ${JSON.stringify(info)}`);
+            });
+        }
+
+        // Testar auto-preenchimento
+        function testAutoFill() {
+            addLog('🚀 Iniciando teste de auto-preenchimento...');
+            
+            if (typeof fillMercadoPagoTestData === 'function') {
+                fillMercadoPagoTestData();
+            } else {
+                addLog('❌ Função fillMercadoPagoTestData não encontrada');
+            }
+        }
+
+        // Interceptar logs do console para mostrar no debug
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            if (args.length > 0 && typeof args[0] === 'string') {
+                const message = args.join(' ');
+                if (message.includes('📋') || message.includes('✅') || message.includes('❌') || message.includes('⚠️')) {
+                    const logDiv = document.getElementById('debugLog');
+                    if (logDiv) {
+                        const timestamp = new Date().toLocaleTimeString();
+                        logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+                        logDiv.scrollTop = logDiv.scrollHeight;
+                    }
+                }
+            }
+        };
+
+        // Inicializar automaticamente quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('🔄 Página carregada, aguardando inicialização manual...');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Payment Flow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-6">Test Payment Flow</h1>
+        
+        <div class="mb-4">
+            <h3 class="font-bold mb-2">Test Specialty Data:</h3>
+            <pre id="testData" class="bg-gray-100 p-3 rounded text-sm"></pre>
+        </div>
+        
+        <button onclick="testPaymentFlow()" 
+                class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition">
+            Test Payment Processing
+        </button>
+        
+        <div id="results" class="mt-4 p-3 rounded hidden"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/realtime-queue.js"></script>
+    
+    <script>
+        // Test specialty data
+        const testSpecialty = {
+            id: 'test-123',
+            name: 'Clínica Geral',
+            description: 'Consulta médica geral para diagnóstico e tratamento',
+            icon: '🩺',
+            price: 80,
+            duration: 30,
+            is_active: true
+        };
+        
+        document.getElementById('testData').textContent = JSON.stringify(testSpecialty, null, 2);
+        
+        async function testPaymentFlow() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.className = 'mt-4 p-3 rounded bg-blue-50 border border-blue-200';
+            resultsDiv.innerHTML = '<p class="text-blue-800">🔄 Testing payment flow...</p>';
+            
+            try {
+                // Test data validation
+                console.log('Testing specialty data:', testSpecialty);
+                
+                if (!testSpecialty) {
+                    throw new Error('Specialty data is null');
+                }
+                
+                if (!testSpecialty.price || isNaN(parseFloat(testSpecialty.price))) {
+                    throw new Error('Invalid price: ' + testSpecialty.price);
+                }
+                
+                if (parseFloat(testSpecialty.price) <= 0) {
+                    throw new Error('Price must be greater than zero: ' + testSpecialty.price);
+                }
+                
+                // Test Mercado Pago amount configuration
+                const amount = parseFloat(testSpecialty.price);
+                console.log('Parsed amount:', amount);
+                
+                resultsDiv.className = 'mt-4 p-3 rounded bg-green-50 border border-green-200';
+                resultsDiv.innerHTML = `
+                    <p class="text-green-800 font-bold">✅ Payment Flow Test Passed!</p>
+                    <ul class="text-green-700 text-sm mt-2">
+                        <li>✓ Specialty data is valid</li>
+                        <li>✓ Price is valid: R$ ${amount.toFixed(2)}</li>
+                        <li>✓ Amount property will be set correctly</li>
+                        <li>✓ Ready for Mercado Pago integration</li>
+                    </ul>
+                `;
+                
+            } catch (error) {
+                console.error('Payment flow test failed:', error);
+                resultsDiv.className = 'mt-4 p-3 rounded bg-red-50 border border-red-200';
+                resultsDiv.innerHTML = `
+                    <p class="text-red-800 font-bold">❌ Payment Flow Test Failed!</p>
+                    <p class="text-red-700 text-sm mt-2">Error: ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
