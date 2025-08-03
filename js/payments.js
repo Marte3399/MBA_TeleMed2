@@ -193,22 +193,26 @@ class PaymentSystem {
             }
 
             // Simular processamento de pagamento
-            console.log('💳 Processando pagamento...');
             await this.simulatePaymentProcessing();
 
-            // Criar consulta no banco de dados
-            const appointmentId = await this.createAppointment();
-
-            // Adicionar à fila
-            await this.addToQueue(appointmentId);
+            // Criar consulta no banco (status PENDING)
+            const consultationId = await this.createAppointment();
 
             // Fechar modal e mostrar sucesso
             this.closePaymentModal();
-            this.showPaymentSuccess(appointmentId);
+            this.showPaymentSuccess(consultationId);
 
-            // Redirecionar para fila de espera
+            // Simular aprovação de pagamento (apenas para testes)
+            if (window.paymentSimulator && this.currentConsultation) {
+                window.paymentSimulator.simulatePaymentApproval(
+                    this.currentConsultation.id, 
+                    this.currentConsultation.payment_id
+                );
+            }
+
+            // Redirecionar para "Minhas Consultas" onde o paciente aguardará a confirmação do pagamento
             setTimeout(() => {
-                this.redirectToQueue(appointmentId);
+                this.redirectToMyConsultations();
             }, 2000);
 
         } catch (error) {
@@ -265,32 +269,49 @@ class PaymentSystem {
     // Criar consulta no banco de dados
     async createAppointment() {
         try {
+            console.log('🔍 Iniciando criação de consulta...');
+            
             const { data: user } = await supabase.auth.getUser();
+            console.log('👤 Usuário obtido:', user?.user?.id, user?.user?.email);
+            
             if (!user.user) {
                 throw new Error('Usuário não autenticado');
             }
 
-            const appointmentData = {
-                patient_id: user.user.id,
+            // Gerar um payment_id único que será usado pelo Mercado Pago
+            const paymentId = 'MP_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            console.log('💳 Payment ID gerado:', paymentId);
+
+            const consultationData = {
+                user_id: user.user.id,
                 specialty_id: this.currentAppointment.specialtyId,
-                scheduled_date: new Date().toISOString().split('T')[0],
-                scheduled_time: new Date().toTimeString().split(' ')[0],
-                duration: this.currentAppointment.duration,
-                status: 'paid',
-                type: 'video',
+                specialty_name: this.currentAppointment.specialtyName,
                 price: this.currentAppointment.price,
-                payment_id: 'PAY_' + Date.now()
+                payment_id: paymentId,
+                status: 'PENDING', // Status válido para consultations
+                patient_name: user.user.email, // Usar email como nome temporário
+                patient_email: user.user.email,
+                symptoms: document.getElementById('symptoms')?.value || 'Consulta agendada via simulador'
             };
+            
+            console.log('📋 Dados da consulta:', consultationData);
 
             const { data, error } = await supabase
-                .from('appointments')
-                .insert([appointmentData])
+                .from('consultations')
+                .insert([consultationData])
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ Erro detalhado na inserção:', error);
+                throw error;
+            }
 
-            console.log('✅ Consulta criada:', data.id);
+            console.log('✅ Consulta criada:', data.id, 'Payment ID:', paymentId);
+            
+            // Armazenar dados para uso posterior
+            this.currentConsultation = data;
+            
             return data.id;
 
         } catch (error) {
@@ -307,29 +328,6 @@ class PaymentSystem {
                 .from('consultation_queue')
                 .select('position')
                 .eq('specialty_id', this.currentAppointment.specialtyId)
-                .order('position', { ascending: false })
-                .limit(1);
-
-            const nextPosition = queueData && queueData.length > 0 ? queueData[0].position + 1 : 1;
-
-            const { data: user } = await supabase.auth.getUser();
-            const queueEntry = {
-                appointment_id: appointmentId,
-                specialty_id: this.currentAppointment.specialtyId,
-                patient_id: user.user.id,
-                position: nextPosition,
-                estimated_wait_time: nextPosition * 15, // 15 min por posição
-                status: 'waiting'
-            };
-
-            const { data, error } = await supabase
-                .from('consultation_queue')
-                .insert([queueEntry])
-                .select()
-                .single();
-
-            if (error) throw error;
-
             console.log('✅ Adicionado à fila na posição:', nextPosition);
             return data;
 
@@ -340,25 +338,39 @@ class PaymentSystem {
     }
 
     // Mostrar sucesso do pagamento
-    showPaymentSuccess(appointmentId) {
+    showPaymentSuccess(consultationId) {
         const successHTML = `
             <div id="paymentSuccess" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
                 <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 text-center">
                     <div class="text-6xl mb-4">✅</div>
-                    <h2 class="text-2xl font-bold text-green-600 mb-4">Pagamento Aprovado!</h2>
-                    <p class="text-gray-600 mb-4">Sua consulta foi confirmada e você foi adicionado à fila de atendimento.</p>
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                        <p class="text-sm text-green-800">
-                            <strong>ID da Consulta:</strong> ${appointmentId.substring(0, 8)}...<br>
-                            <strong>Especialidade:</strong> ${this.currentAppointment.specialtyName}
+                    <h2 class="text-2xl font-bold text-green-600 mb-4">Pagamento Processado!</h2>
+                    <p class="text-gray-600 mb-4">Sua consulta foi registrada. Aguarde a confirmação do pagamento.</p>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <p class="text-sm text-blue-800">
+                            <strong>ID da Consulta:</strong> ${consultationId.substring(0, 8)}...<br>
+                            <strong>Especialidade:</strong> ${this.currentAppointment.specialtyName}<br>
+                            <strong>Status:</strong> Aguardando confirmação
                         </p>
                     </div>
-                    <p class="text-sm text-gray-500">Redirecionando para a fila de espera...</p>
+                    <p class="text-sm text-gray-500">Redirecionando para "Minhas Consultas"...</p>
                 </div>
             </div>
         `;
 
         document.body.insertAdjacentHTML('beforeend', successHTML);
+
+        // Enviar notificação multi-canal de confirmação de pagamento
+        if (typeof window.sendPaymentConfirmationNotification === 'function') {
+            const appointmentData = {
+                id: consultationId,
+                specialty: this.currentAppointment.specialtyName,
+                price: this.currentAppointment.price,
+                queuePosition: 1, // Será atualizado quando entrar na fila
+                patientPhone: null, // Seria obtido do perfil do usuário
+                patientEmail: null  // Seria obtido do perfil do usuário
+            };
+            window.sendPaymentConfirmationNotification(appointmentData);
+        }
 
         // Remover após 3 segundos
         setTimeout(() => {
@@ -378,6 +390,19 @@ class PaymentSystem {
         // Por enquanto, vamos mostrar a interface da fila
         if (window.queueSystem) {
             window.queueSystem.showQueueInterface(appointmentId);
+        }
+    }
+
+    // Redirecionar para "Minhas Consultas"
+    redirectToMyConsultations() {
+        console.log('🔄 Redirecionando para Minhas Consultas...');
+        
+        // Se estivermos no dashboard, mostrar a seção de consultas
+        if (window.showSection) {
+            window.showSection('appointments');
+        } else {
+            // Se não estivermos no dashboard, redirecionar para lá
+            window.location.href = 'dashboard.html#appointments';
         }
     }
 

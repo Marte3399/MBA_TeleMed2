@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Sistema de Prontuários Digitais</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://xfgpoixiqppajhgkcwse.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZ3BvaXhpcXBwYWpoZ2tjd3NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDYyNTEsImV4cCI6MjA2Njc4MjI1MX0.5zEXy_CnqnJYxEcdi_L3Qd_VrgyM2jiB40VLSr6brXY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Funções utilitárias
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('pt-BR');
+        }
+        
+        function showNotification(title, message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            } text-white`;
+            
+            notification.innerHTML = `
+                <div class="font-bold">${title}</div>
+                <div class="text-sm">${message}</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.remove();
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-blue-600">TeleMed - Teste de Prontuários</h1>
+                <div class="text-sm text-gray-600">
+                    Sistema de Prontuários Digitais
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Título -->
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">📋 Sistema de Prontuários Digitais</h2>
+            <p class="text-lg text-gray-600">Teste das funcionalidades de criação, assinatura e geração de PDFs</p>
+        </div>
+
+        <!-- Cards de Teste -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Criar Prontuário -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">📝</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Criar Prontuário</h3>
+                    <p class="text-gray-600 mb-4">Interface para médicos criarem prontuários digitais</p>
+                    <button 
+                        onclick="testCreateMedicalRecord()" 
+                        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                        Testar Criação
+                    </button>
+                </div>
+            </div>
+
+            <!-- Assinatura Digital -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">✍️</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Assinatura Digital</h3>
+                    <p class="text-gray-600 mb-4">Sistema de assinatura digital autenticada</p>
+                    <button 
+                        onclick="testDigitalSignature()" 
+                        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                        Testar Assinatura
+                    </button>
+                </div>
+            </div>
+
+            <!-- Gerar PDF -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">📄</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Gerar PDF</h3>
+                    <p class="text-gray-600 mb-4">Geração automática de PDF do atendimento</p>
+                    <button 
+                        onclick="testPDFGeneration()" 
+                        class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+                        Testar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Funcionalidades Específicas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- PDF de Prescrição -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">💊</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">PDF de Prescrição</h3>
+                    <p class="text-gray-600 mb-4">PDF separado para prescrições médicas</p>
+                    <button 
+                        onclick="testPrescriptionPDF()" 
+                        class="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition">
+                        Testar Prescrição
+                    </button>
+                </div>
+            </div>
+
+            <!-- Listar Prontuários -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">📚</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Listar Prontuários</h3>
+                    <p class="text-gray-600 mb-4">Visualizar prontuários existentes</p>
+                    <button 
+                        onclick="listMedicalRecords()" 
+                        class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+                        Listar Prontuários
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Resultados -->
+        <div id="resultsArea" class="bg-white rounded-xl shadow-lg p-6 hidden">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">📊 Resultados dos Testes</h3>
+            <div id="resultsContent" class="space-y-4">
+                <!-- Resultados serão inseridos aqui -->
+            </div>
+        </div>
+
+        <!-- Status do Sistema -->
+        <div class="bg-blue-50 rounded-xl p-6 mt-8">
+            <h3 class="text-lg font-bold text-blue-900 mb-4">🔧 Status do Sistema</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                    <strong>Supabase:</strong> 
+                    <span id="supabaseStatus" class="text-green-600">✅ Conectado</span>
+                </div>
+                <div>
+                    <strong>jsPDF:</strong> 
+                    <span id="jspdfStatus" class="text-green-600">✅ Carregado</span>
+                </div>
+                <div>
+                    <strong>Sistema:</strong> 
+                    <span id="systemStatus" class="text-green-600">✅ Operacional</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/medical-records.js"></script>
+    
+    <script>
+        // Funções de teste
+        
+        /**
+         * TESTAR CRIAÇÃO DE PRONTUÁRIO
+         * Simula a criação de um novo prontuário médico
+         */
+        function testCreateMedicalRecord() {
+            // Simular dados de uma consulta
+            const mockAppointment = {
+                id: 'test-appointment-' + Date.now(),
+                patient_name: 'João Silva',
+                specialty_name: 'Cardiologia',
+                created_at: new Date().toISOString()
+            };
+            
+            // Simular que temos uma consulta atual
+            window.mockAppointmentData = mockAppointment;
+            
+            // Abrir interface de prontuário
+            showMedicalRecordInterface(mockAppointment.id);
+            
+            showResults('Teste de Criação', 'Interface de prontuário aberta com dados simulados');
+        }
+        
+        /**
+         * TESTAR ASSINATURA DIGITAL
+         * Testa o sistema de assinatura digital
+         */
+        function testDigitalSignature() {
+            // Simular prontuário existente
+            MedicalRecords.currentRecord = {
+                id: 'test-record-' + Date.now(),
+                diagnosis: 'Hipertensão arterial sistêmica',
+                prescription: 'Losartana 50mg - 1 comprimido ao dia',
+                recommendations: 'Dieta hipossódica e exercícios regulares',
+                is_signed: false
+            };
+            
+            // Mostrar modal de assinatura
+            showDigitalSignatureModal();
+            
+            showResults('Teste de Assinatura', 'Modal de assinatura digital aberto');
+        }
+        
+        /**
+         * TESTAR GERAÇÃO DE PDF
+         * Testa a geração de PDF do prontuário
+         */
+        function testPDFGeneration() {
+            // Simular prontuário completo
+            MedicalRecords.currentRecord = {
+                id: 'test-record-' + Date.now(),
+                appointment_id: 'test-appointment-' + Date.now(),
+                diagnosis: 'Hipertensão arterial sistêmica leve',
+                prescription: 'Losartana 50mg - 1 comprimido ao dia pela manhã\nHidroclotiazida 25mg - 1 comprimido ao dia',
+                recommendations: 'Dieta hipossódica (reduzir sal)\nExercícios físicos regulares (caminhada 30min/dia)\nControle de peso\nRetorno em 30 dias',
+                is_signed: true
+            };
+            
+            // Simular assinatura digital
+            MedicalRecords.digitalSignature = JSON.stringify({
+                doctor: "Dr. João Silva - CRM: 12345-SP",
+                timestamp: new Date().toISOString(),
+                documentHash: "abc123def456",
+                signatureHash: btoa("test-signature-" + Date.now())
+            });
+            
+            // Gerar PDF
+            generateMedicalRecordPDF();
+            
+            showResults('Teste de PDF', 'PDF do prontuário gerado e baixado');
+        }
+        
+        /**
+         * TESTAR PDF DE PRESCRIÇÃO
+         * Testa a geração de PDF específico para prescrições
+         */
+        function testPrescriptionPDF() {
+            // Simular prontuário com prescrição
+            MedicalRecords.currentRecord = {
+                id: 'test-record-' + Date.now(),
+                appointment_id: 'test-appointment-' + Date.now(),
+                prescription: `MEDICAMENTOS PRESCRITOS:
+
+1. Losartana 50mg
+   - Tomar 1 comprimido ao dia pela manhã
+   - Em jejum ou com pouco alimento
+   - Duração: uso contínuo
+
+2. Hidroclorotiazida 25mg
+   - Tomar 1 comprimido ao dia pela manhã
+   - Junto com a Losartana
+   - Duração: uso contínuo
+
+3. Ácido Acetilsalicílico 100mg
+   - Tomar 1 comprimido ao dia após o jantar
+   - Proteção gástrica se necessário
+   - Duração: uso contínuo
+
+OBSERVAÇÕES:
+- Não interromper o tratamento sem orientação médica
+- Controlar pressão arterial semanalmente
+- Retorno em 30 dias para avaliação`,
+                is_signed: true
+            };
+            
+            // Simular assinatura digital
+            MedicalRecords.digitalSignature = JSON.stringify({
+                doctor: "Dr. João Silva - CRM: 12345-SP",
+                timestamp: new Date().toISOString(),
+                documentHash: "abc123def456",
+                signatureHash: btoa("test-signature-" + Date.now())
+            });
+            
+            // Gerar PDF da prescrição
+            generatePrescriptionPDF();
+            
+            showResults('Teste de Prescrição', 'PDF da prescrição gerado e baixado');
+        }
+        
+        /**
+         * LISTAR PRONTUÁRIOS
+         * Lista prontuários existentes no banco de dados
+         */
+        async function listMedicalRecords() {
+            try {
+                const { data, error } = await supabase
+                    .from('medical_records')
+                    .select(`
+                        id,
+                        diagnosis,
+                        is_signed,
+                        created_at,
+                        appointments(
+                            id,
+                            created_at
+                        )
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (error) {
+                    console.error('Erro ao buscar prontuários:', error);
+                    showResults('Erro', 'Erro ao buscar prontuários: ' + error.message);
+                    return;
+                }
+                
+                let resultHtml = '<h4 class="font-bold mb-2">Prontuários Encontrados:</h4>';
+                
+                if (data && data.length > 0) {
+                    resultHtml += '<div class="space-y-2">';
+                    data.forEach(record => {
+                        resultHtml += `
+                            <div class="border p-3 rounded">
+                                <div class="font-medium">ID: ${record.id}</div>
+                                <div class="text-sm text-gray-600">
+                                    Diagnóstico: ${record.diagnosis ? record.diagnosis.substring(0, 100) + '...' : 'N/A'}
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    Assinado: ${record.is_signed ? '✅ Sim' : '❌ Não'}
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    Criado em: ${formatDate(record.created_at)}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    resultHtml += '</div>';
+                } else {
+                    resultHtml += '<p class="text-gray-600">Nenhum prontuário encontrado.</p>';
+                }
+                
+                showResults('Lista de Prontuários', resultHtml);
+                
+            } catch (error) {
+                console.error('Erro na consulta:', error);
+                showResults('Erro', 'Erro na consulta: ' + error.message);
+            }
+        }
+        
+        /**
+         * MOSTRAR RESULTADOS
+         * Exibe resultados dos testes na interface
+         */
+        function showResults(title, content) {
+            const resultsArea = document.getElementById('resultsArea');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'border-l-4 border-blue-500 pl-4';
+            resultDiv.innerHTML = `
+                <div class="font-bold text-gray-900">${title}</div>
+                <div class="text-gray-600 mt-1">${content}</div>
+                <div class="text-xs text-gray-400 mt-2">${new Date().toLocaleString('pt-BR')}</div>
+            `;
+            
+            resultsContent.insertBefore(resultDiv, resultsContent.firstChild);
+            resultsArea.classList.remove('hidden');
+        }
+        
+        // Override da função loadAppointmentData para usar dados simulados
+        window.originalLoadAppointmentData = window.loadAppointmentData;
+        window.loadAppointmentData = async function(appointmentId) {
+            if (window.mockAppointmentData && appointmentId === window.mockAppointmentData.id) {
+                return window.mockAppointmentData;
+            }
+            return window.originalLoadAppointmentData ? window.originalLoadAppointmentData(appointmentId) : null;
+        };
+        
+        // Verificar status do sistema ao carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar Supabase
+            if (supabase) {
+                document.getElementById('supabaseStatus').innerHTML = '✅ Conectado';
+            } else {
+                document.getElementById('supabaseStatus').innerHTML = '❌ Erro';
+            }
+            
+            // Verificar jsPDF
+            if (window.jsPDF) {
+                document.getElementById('jspdfStatus').innerHTML = '✅ Carregado';
+            } else {
+                document.getElementById('jspdfStatus').innerHTML = '❌ Não carregado';
+            }
+            
+            // Status geral
+            document.getElementById('systemStatus').innerHTML = '✅ Operacional';
+            
+            console.log('🧪 Página de teste de prontuários carregada');
+        });
+    </script>
+</body>
+</html>

@@ -516,43 +516,6 @@ function updateSpecialtyModal(specialty) {
                     const doctorStatusText = doctor.availability === 'online' ? 'Disponível' : 
                                            doctor.availability === 'busy' ? 'Ocupado' : 'Offline';
                     const doctorStatusIcon = doctor.availability === 'online' ? '🟢' : 
-                                           doctor.availability === 'busy' ? '🟡' : '🔴';
-                    
-                    return `
-                        <div class="flex items-center justify-between p-4 ${doctorStatusClass} border rounded-lg">
-                            <div class="flex-1">
-                                <div class="font-semibold text-gray-900">${doctor.name}</div>
-                                <div class="text-sm text-gray-600">${doctor.crm} • ${doctor.experience} de experiência</div>
-                                <div class="text-xs text-gray-500 mt-1">${doctor.consultations} consultas realizadas</div>
-                            </div>
-                            <div class="text-right">
-                                <div class="flex items-center gap-1 mb-1">
-                                    <span class="text-yellow-500">★</span>
-                                    <span class="text-sm font-semibold">${doctor.rating}</span>
-                                </div>
-                                <div class="text-xs flex items-center gap-1">
-                                    <span>${doctorStatusIcon}</span>
-                                    <span>${doctorStatusText}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        </div>
-        
-        <div class="border-t border-gray-200 pt-6">
-            <div class="flex items-center justify-between mb-4">
-                <div class="text-sm text-gray-600">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span>⭐</span>
-                        <span>${specialty.rating} (${specialty.reviewsFormatted})</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span>👥</span>
-                        <span>${specialty.doctorsOnline} médicos online</span>
-                    </div>
-                </div>
                 <div class="text-right">
                     <div class="text-2xl font-bold text-green-600">${specialty.priceFormatted}</div>
                     <div class="text-xs text-gray-500">por consulta</div>

@@ -97,6 +97,8 @@ CREATE TABLE appointments (
   notes TEXT,
   payment_id VARCHAR(255),
   queue_position INTEGER,
+  video_call_link TEXT,
+  video_call_room_name VARCHAR(255),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

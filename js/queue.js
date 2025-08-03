@@ -342,8 +342,19 @@ class QueueSystem {
             this.showCallModal();
         }
 
-        // Adicionar notificação de mudança
+        // Usar sistema de notificações multi-canal
         if (oldPosition !== newPosition) {
+            // Verificar notificações de proximidade
+            if (typeof window.checkProximityNotifications === 'function') {
+                window.checkProximityNotifications(newPosition);
+            }
+            
+            // Enviar notificação de atualização de posição
+            if (typeof window.sendQueuePositionUpdateNotification === 'function') {
+                const estimatedWaitTime = newQueueData.estimated_wait_time || (newPosition * 15);
+                window.sendQueuePositionUpdateNotification(newPosition, estimatedWaitTime);
+            }
+            
             this.addNotification(`Sua posição mudou para ${newPosition}`, 'info');
         }
     }
@@ -368,7 +379,22 @@ class QueueSystem {
         }
 
         callModal.classList.remove('hidden');
-        this.playCallSound();
+        
+        // Usar sistema de notificações multi-canal para som de chamada
+        if (typeof window.playCallSound === 'function') {
+            window.playCallSound();
+        } else {
+            this.playCallSound();
+        }
+
+        // Enviar notificação de consulta pronta
+        if (typeof window.sendConsultationReadyNotification === 'function') {
+            const doctorData = {
+                name: document.getElementById('doctorName').textContent,
+                specialty: document.getElementById('doctorSpecialty').textContent
+            };
+            window.sendConsultationReadyNotification(doctorData);
+        }
 
         console.log('📞 Modal de chamada exibido');
     }

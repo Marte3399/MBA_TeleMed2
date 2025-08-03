@@ -68,18 +68,9 @@ class RealTimeQueueSystem {
         try {
             const { data, error } = await supabase
                 .from('consultation_queue')
-                .select(`
-                    *,
-                    appointments (
-                        id,
-                        specialty_id,
-                        price,
-                        status,
-                        specialties (name, icon)
-                    )
-                `)
-                .eq('patient_id', this.currentUser.id)
-                .eq('status', 'waiting')
+                .select('*')
+                .eq('user_id', this.currentUser.id)
+                .eq('status', 'WAITING')
                 .single();
 
             if (error && error.code !== 'PGRST116') {
@@ -88,7 +79,20 @@ class RealTimeQueueSystem {
 
             if (data) {
                 console.log('🔄 Usuário já está em fila:', data);
-                this.currentAppointment = data.appointments;
+                
+                // Buscar dados da consulta separadamente
+                if (data.consultation_id) {
+                    const { data: consultationData } = await supabase
+                        .from('consultations')
+                        .select('*')
+                        .eq('id', data.consultation_id)
+                        .single();
+                    
+                    this.currentAppointment = consultationData;
+                } else {
+                    this.currentAppointment = null;
+                }
+                
                 this.isInQueue = true;
                 this.queuePosition = data.position;
                 this.estimatedWaitTime = data.estimated_wait_time;
@@ -485,7 +489,7 @@ class RealTimeQueueSystem {
     async createAppointment(specialtyData, paymentResult) {
         try {
             const appointmentData = {
-                patient_id: this.currentUser.id,
+                user_id: this.currentUser.id,
                 specialty_id: specialtyData?.id || null,
                 scheduled_date: new Date().toISOString().split('T')[0],
                 scheduled_time: new Date().toTimeString().split(' ')[0],
@@ -498,12 +502,9 @@ class RealTimeQueueSystem {
             };
 
             const { data, error } = await supabase
-                .from('appointments')
+                .from('consultations')
                 .insert([appointmentData])
-                .select(`
-                    *,
-                    specialties (name, icon, description)
-                `)
+                .select('*')
                 .single();
 
             if (error) throw error;
@@ -535,7 +536,7 @@ class RealTimeQueueSystem {
             const queueEntry = {
                 appointment_id: appointment.id,
                 specialty_id: appointment.specialty_id,
-                patient_id: this.currentUser.id,
+                user_id: this.currentUser.id,
                 position: nextPosition,
                 estimated_wait_time: estimatedWaitTime,
                 status: 'waiting',
@@ -572,7 +573,7 @@ class RealTimeQueueSystem {
                 event: '*',
                 schema: 'public',
                 table: 'consultation_queue',
-                filter: `patient_id=eq.${this.currentUser.id}`
+                filter: `user_id=eq.${this.currentUser.id}`
             }, (payload) => {
                 console.log('🔄 Atualização da fila:', payload);
                 this.handleQueueUpdate(payload);
@@ -751,7 +752,7 @@ class RealTimeQueueSystem {
                                 <p id="queueSpecialtyName" class="text-gray-600">Especialidade</p>
                             </div>
                         </div>
-                        <button onclick="realTimeQueue.exitQueue()" class="text-gray-400 hover:text-gray-600 text-xl">×</button>
+                        <button onclick="closeQueueModal()" class="text-gray-400 hover:text-gray-600 text-xl" title="Fechar">×</button>
                     </div>
                 </div>
 
@@ -881,28 +882,50 @@ class RealTimeQueueSystem {
         }
     }
 
+    // Fechar modal sem sair da fila
+    closeModal() {
+        console.log('🚪 Fechando modal da fila (sem sair da fila)...');
+        const queueModal = document.getElementById('realTimeQueueModal');
+        if (queueModal) {
+            queueModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    }
+
     // Mostrar notificação de consulta pronta
     showConsultationNotification(doctorData) {
-        // Verificar se modal já existe
-        let notificationModal = document.getElementById('consultationReadyModal');
+        console.log('📞 Mostrando notificação de consulta pronta:', doctorData);
+        
+        // Usar a modal existente no HTML
+        const notificationModal = document.getElementById('consultationNotification');
         
         if (!notificationModal) {
-            notificationModal = this.createConsultationNotificationModal();
-            document.body.appendChild(notificationModal);
+            console.error('❌ Modal consultationNotification não encontrada!');
+            return;
         }
 
-        // Preencher dados do médico
-        document.getElementById('readyDoctorName').textContent = doctorData.name;
-        document.getElementById('readyDoctorSpecialty').textContent = doctorData.specialty;
-        document.getElementById('readyDoctorCrm').textContent = doctorData.crm;
-        document.getElementById('readyDoctorRating').textContent = `${doctorData.rating} ⭐`;
-        document.getElementById('readyDoctorExperience').textContent = `${doctorData.experience} anos`;
+        // Preencher dados do médico usando os IDs corretos do HTML
+        const doctorNameEl = document.getElementById('doctorName');
+        const doctorSpecialtyEl = document.getElementById('doctorSpecialty');
+        const doctorCrmEl = document.getElementById('doctorCrm');
+        
+        if (doctorNameEl) doctorNameEl.textContent = doctorData.name || 'Dr. João Silva';
+        if (doctorSpecialtyEl) doctorSpecialtyEl.textContent = doctorData.specialty || 'Medicina Geral';
+        if (doctorCrmEl) doctorCrmEl.textContent = doctorData.crm || '12345-SP';
 
         // Mostrar modal
         notificationModal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+        
+        // Tocar som de notificação
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+            audio.play().catch(() => {}); // Ignorar erros de autoplay
+        } catch (error) {
+            console.log('Som de notificação não disponível');
+        }
 
-        console.log('📞 Notificação de consulta pronta exibida');
+        console.log('✅ Notificação de consulta pronta exibida');
     }
 
     // Criar modal de notificação de consulta pronta
@@ -1056,7 +1079,7 @@ class RealTimeQueueSystem {
             const { error } = await supabase
                 .from('consultation_queue')
                 .delete()
-                .eq('patient_id', this.currentUser.id)
+                .eq('user_id', this.currentUser.id)
                 .eq('appointment_id', this.currentAppointment.id);
 
             if (error) throw error;
@@ -1132,7 +1155,7 @@ class RealTimeQueueSystem {
     hidePaymentLoading() {
         const loadingDiv = document.getElementById('paymentLoading');
         if (loadingDiv) {
-            document.body.removeChild(loadingDiv);
+            loadingDiv.remove();
         }
     }
 
@@ -1924,4 +1947,18 @@ document.addEventListener('DOMContentLoaded', () => {
 // Exportar para uso em outros módulos
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = RealTimeQueueSystem;
+}
+
+// Função global para fechar modal da fila
+function closeQueueModal() {
+    console.log(' Fechando modal da fila...');
+    
+    const queueModal = document.getElementById('queueModal');
+    if (queueModal) {
+        queueModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        console.log(' Modal da fila fechado');
+    } else {
+        console.warn(' Modal da fila não encontrado');
+    }
 }

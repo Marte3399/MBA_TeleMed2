@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Sistema de Histórico Médico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://xfgpoixiqppajhgkcwse.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZ3BvaXhpcXBwYWpoZ2tjd3NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDYyNTEsImV4cCI6MjA2Njc4MjI1MX0.5zEXy_CnqnJYxEcdi_L3Qd_VrgyM2jiB40VLSr6brXY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Estado global simulado
+        window.TeleMed = {
+            currentUser: {
+                id: 'test-patient-id',
+                name: 'João Silva',
+                email: 'joao.silva@email.com'
+            },
+            isLoggedIn: true,
+            formatDate: function(date) {
+                return new Date(date).toLocaleDateString('pt-BR');
+            },
+            formatTime: function(date) {
+                return new Date(date).toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            },
+            debounce: function(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+        };
+        
+        // Função para mostrar notificações
+        function showNotification(title, message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 
+                'bg-blue-500'
+            } text-white`;
+            
+            notification.innerHTML = `
+                <div class="font-bold">${title}</div>
+                <div class="text-sm">${message}</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // Função para fechar modal
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        // Função para formatar data
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('pt-BR');
+        }
+        
+        // Função para formatar hora
+        function formatTime(date) {
+            return new Date(date).toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Função debounce
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-blue-600">TeleMed - Teste Histórico Médico</h1>
+                <div class="text-sm text-gray-600">
+                    Usuário: João Silva (Paciente)
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">🧪 Teste do Sistema de Histórico Médico</h2>
+            
+            <!-- Informações do Teste -->
+            <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                <h3 class="font-bold text-blue-900 mb-2">Funcionalidades Testadas:</h3>
+                <ul class="text-sm text-blue-800 space-y-1">
+                    <li>✅ Interface de listagem de prontuários por data</li>
+                    <li>✅ Download de PDFs de atendimento</li>
+                    <li>✅ Download de prescrições separadas</li>
+                    <li>✅ Registro de auditoria para downloads</li>
+                    <li>✅ Validação de assinatura digital nos documentos</li>
+                </ul>
+            </div>
+            
+            <!-- Botões de Teste -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                <button 
+                    onclick="showMedicalHistoryInterface()" 
+                    class="bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition font-semibold">
+                    📚 Abrir Histórico Médico
+                </button>
+                
+                <button 
+                    onclick="createSampleData()" 
+                    class="bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition font-semibold">
+                    🔧 Criar Dados de Teste
+                </button>
+                
+                <button 
+                    onclick="testPDFGeneration()" 
+                    class="bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700 transition font-semibold">
+                    📄 Testar Geração PDF
+                </button>
+                
+                <button 
+                    onclick="testSignatureVerification()" 
+                    class="bg-orange-600 text-white p-4 rounded-lg hover:bg-orange-700 transition font-semibold">
+                    🔐 Testar Verificação Assinatura
+                </button>
+                
+                <button 
+                    onclick="viewAuditLog()" 
+                    class="bg-red-600 text-white p-4 rounded-lg hover:bg-red-700 transition font-semibold">
+                    📊 Ver Log de Auditoria
+                </button>
+                
+                <button 
+                    onclick="testFilters()" 
+                    class="bg-indigo-600 text-white p-4 rounded-lg hover:bg-indigo-700 transition font-semibold">
+                    🔍 Testar Filtros
+                </button>
+            </div>
+            
+            <!-- Status do Teste -->
+            <div id="testStatus" class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="font-bold text-gray-900 mb-2">Status do Teste:</h3>
+                <div id="statusMessages" class="text-sm text-gray-700 space-y-1">
+                    <div>⏳ Aguardando início dos testes...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/medical-history.js"></script>
+    
+    <script>
+        // Função para criar dados de teste
+        async function createSampleData() {
+            addStatusMessage('🔧 Criando dados de teste...');
+            
+            // Simular dados de prontuários médicos
+            const sampleRecords = [
+                {
+                    id: 'record-1',
+                    appointment_id: 'appointment-1',
+                    diagnosis: 'Hipertensão arterial sistêmica leve. Paciente apresenta pressão arterial elevada de forma consistente.',
+                    prescription: 'Losartana 50mg - 1 comprimido pela manhã\nHidroclotiazida 25mg - 1 comprimido pela manhã\nDieta hipossódica e exercícios regulares',
+                    recommendations: 'Retorno em 30 dias para reavaliação. Monitorar pressão arterial diariamente. Evitar alimentos ricos em sódio.',
+                    additional_notes: 'Paciente colaborativo, sem alergias medicamentosas conhecidas.',
+                    digital_signature: JSON.stringify({
+                        doctor: 'Dr. Maria Santos - CRM: 12345-SP',
+                        timestamp: new Date().toISOString(),
+                        documentHash: 'abc123def456',
+                        signatureHash: btoa('Dr. Maria Santos - CRM: 12345-SP' + new Date().toISOString() + 'abc123def456')
+                    }),
+                    is_signed: true,
+                    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    appointments: {
+                        id: 'appointment-1',
+                        specialties: { name: 'Cardiologia', icon: '❤️' },
+                        doctors: { name: 'Maria Santos', crm: '12345-SP' }
+                    }
+                },
+                {
+                    id: 'record-2',
+                    appointment_id: 'appointment-2',
+                    diagnosis: 'Dermatite atópica moderada em região flexural dos braços.',
+                    prescription: 'Hidrocortisona 1% creme - aplicar 2x ao dia nas lesões\nCetaphil loção hidratante - uso diário',
+                    recommendations: 'Evitar banhos muito quentes. Usar sabonetes neutros. Manter pele hidratada.',
+                    additional_notes: 'Paciente relata melhora com tratamentos anteriores similares.',
+                    digital_signature: null,
+                    is_signed: false,
+                    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+                    appointments: {
+                        id: 'appointment-2',
+                        specialties: { name: 'Dermatologia', icon: '🧴' },
+                        doctors: { name: 'João Oliveira', crm: '67890-SP' }
+                    }
+                },
+                {
+                    id: 'record-3',
+                    appointment_id: 'appointment-3',
+                    diagnosis: 'Ansiedade generalizada com episódios de pânico ocasionais.',
+                    prescription: 'Sertralina 50mg - 1 comprimido pela manhã\nClonazepam 0,5mg - 1/2 comprimido se necessário (máximo 2x/dia)',
+                    recommendations: 'Iniciar psicoterapia cognitivo-comportamental. Técnicas de respiração e relaxamento. Exercícios físicos regulares.',
+                    additional_notes: 'Paciente motivado para tratamento. Primeira consulta psiquiátrica.',
+                    digital_signature: JSON.stringify({
+                        doctor: 'Dr. Ana Costa - CRM: 54321-SP',
+                        timestamp: new Date().toISOString(),
+                        documentHash: 'xyz789uvw012',
+                        signatureHash: btoa('Dr. Ana Costa - CRM: 54321-SP' + new Date().toISOString() + 'xyz789uvw012')
+                    }),
+                    is_signed: true,
+                    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+                    appointments: {
+                        id: 'appointment-3',
+                        specialties: { name: 'Psiquiatria', icon: '🧠' },
+                        doctors: { name: 'Ana Costa', crm: '54321-SP' }
+                    }
+                }
+            ];
+            
+            // Simular carregamento dos dados
+            window.MedicalHistory.medicalRecords = sampleRecords;
+            
+            addStatusMessage('✅ Dados de teste criados com sucesso!');
+            addStatusMessage(`📊 ${sampleRecords.length} prontuários médicos disponíveis`);
+        }
+        
+        // Função para testar geração de PDF
+        function testPDFGeneration() {
+            addStatusMessage('📄 Testando geração de PDF...');
+            
+            if (window.MedicalHistory.medicalRecords.length === 0) {
+                addStatusMessage('❌ Nenhum prontuário disponível. Crie dados de teste primeiro.');
+                return;
+            }
+            
+            const firstRecord = window.MedicalHistory.medicalRecords[0];
+            downloadMedicalRecordPDF(firstRecord.id);
+            
+            addStatusMessage('✅ Teste de geração de PDF executado');
+        }
+        
+        // Função para testar verificação de assinatura
+        function testSignatureVerification() {
+            addStatusMessage('🔐 Testando verificação de assinatura...');
+            
+            if (window.MedicalHistory.medicalRecords.length === 0) {
+                addStatusMessage('❌ Nenhum prontuário disponível. Crie dados de teste primeiro.');
+                return;
+            }
+            
+            const signedRecord = window.MedicalHistory.medicalRecords.find(r => r.is_signed);
+            if (signedRecord) {
+                verifyDigitalSignature(signedRecord.id);
+                addStatusMessage('✅ Teste de verificação de assinatura executado');
+            } else {
+                addStatusMessage('❌ Nenhum prontuário assinado encontrado');
+            }
+        }
+        
+        // Função para visualizar log de auditoria
+        function viewAuditLog() {
+            addStatusMessage('📊 Visualizando log de auditoria...');
+            
+            const auditLog = window.MedicalHistory.downloadAuditLog || [];
+            
+            if (auditLog.length === 0) {
+                addStatusMessage('ℹ️ Nenhum registro de auditoria encontrado. Faça alguns downloads primeiro.');
+                return;
+            }
+            
+            // Criar modal para mostrar log de auditoria
+            const modal = document.createElement('div');
+            modal.id = 'auditLogModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold">📊 Log de Auditoria de Downloads</h3>
+                        <button onclick="closeModal('auditLogModal')" class="text-gray-500 hover:text-gray-700">&times;</button>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        ${auditLog.map(log => `
+                            <div class="bg-gray-50 p-3 rounded border-l-4 border-blue-400">
+                                <div class="font-medium">${log.description}</div>
+                                <div class="text-sm text-gray-600">
+                                    <div>Usuário: ${log.user_id}</div>
+                                    <div>Tipo: ${log.document_type}</div>
+                                    <div>Data: ${new Date(log.downloaded_at).toLocaleString('pt-BR')}</div>
+                                    <div>IP: ${log.ip_address}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            addStatusMessage(`✅ Log de auditoria exibido (${auditLog.length} registros)`);
+        }
+        
+        // Função para testar filtros
+        function testFilters() {
+            addStatusMessage('🔍 Testando sistema de filtros...');
+            
+            if (window.MedicalHistory.medicalRecords.length === 0) {
+                addStatusMessage('❌ Nenhum prontuário disponível. Crie dados de teste primeiro.');
+                return;
+            }
+            
+            // Abrir interface e simular filtros
+            showMedicalHistoryInterface();
+            
+            setTimeout(() => {
+                // Simular busca por "hipertensão"
+                const searchInput = document.getElementById('searchMedicalRecords');
+                if (searchInput) {
+                    searchInput.value = 'hipertensão';
+                    searchInput.dispatchEvent(new Event('input'));
+                    addStatusMessage('✅ Filtro de busca testado com termo "hipertensão"');
+                }
+                
+                // Simular filtro de data
+                const dateStart = document.getElementById('dateFilterStart');
+                if (dateStart) {
+                    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                    dateStart.value = weekAgo.toISOString().split('T')[0];
+                    dateStart.dispatchEvent(new Event('change'));
+                    addStatusMessage('✅ Filtro de data testado');
+                }
+            }, 1000);
+        }
+        
+        // Função para adicionar mensagem de status
+        function addStatusMessage(message) {
+            const statusMessages = document.getElementById('statusMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = `${new Date().toLocaleTimeString('pt-BR')} - ${message}`;
+            statusMessages.appendChild(messageDiv);
+            
+            // Manter apenas as últimas 10 mensagens
+            while (statusMessages.children.length > 10) {
+                statusMessages.removeChild(statusMessages.firstChild);
+            }
+            
+            // Scroll para a última mensagem
+            statusMessages.scrollTop = statusMessages.scrollHeight;
+        }
+        
+        // Inicializar teste
+        document.addEventListener('DOMContentLoaded', function() {
+            addStatusMessage('🚀 Sistema de teste inicializado');
+            addStatusMessage('💡 Clique em "Criar Dados de Teste" para começar');
+        });
+    </script>
+</body>
+</html>

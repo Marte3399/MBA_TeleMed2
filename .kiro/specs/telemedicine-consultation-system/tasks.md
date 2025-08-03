@@ -84,7 +84,12 @@
   - Adicionar notificações visuais para mudanças de posição
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 7. Desenvolver sistema de notificações multi-canal
+- [x] 7. Desenvolver sistema de notificações multi-canal
+
+
+
+
+
 
 
 
@@ -95,7 +100,15 @@
   - Implementar alertas sonoros para chamada de consulta
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 8. Implementar interface de videoconsulta
+- [x] 8. Implementar interface de videoconsulta
+
+
+
+
+
+
+
+
   - Integrar WebRTC/Jitsi Meet para videochamadas HD
   - Criar tela de preparação com teste de câmera/microfone
   - Desenvolver controles de áudio/vídeo durante a consulta
@@ -103,7 +116,12 @@
   - Adicionar funcionalidade de gravação de sessão (opcional)
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 9. Criar sistema de prontuários digitais
+- [x] 9. Criar sistema de prontuários digitais
+
+
+
+
+
   - Desenvolver interface para médicos criarem prontuários
   - Implementar campos para diagnóstico, prescrições e recomendações
   - Criar sistema de assinatura digital autenticada
@@ -135,7 +153,12 @@
   - Adicionar lembretes adicionais para não respondentes
   - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-- [ ] 12. Desenvolver sistema de histórico médico
+- [x] 12. Desenvolver sistema de histórico médico
+
+
+
+
+
   - Criar interface de listagem de prontuários por data
   - Implementar download de PDFs de atendimento
   - Desenvolver sistema de download de prescrições separadas
@@ -151,7 +174,12 @@
   - Implementar acesso seguro a arquivos compartilhados por 90 dias
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-- [ ] 14. Criar sistema de gerenciamento de consultas
+- [x] 14. Criar sistema de gerenciamento de consultas
+
+
+
+
+
   - Implementar visualização de consultas próximas e anteriores
   - Desenvolver funcionalidades de reagendamento de consultas
   - Criar sistema de cancelamento com regras de prazo

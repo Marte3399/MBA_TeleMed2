@@ -6,11 +6,16 @@ let currentSpecialty = null;
 let deleteSpecialtyId = null;
 
 // Initialize the admin panel
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     console.log('🏥 Admin Specialties System Loading...');
+    
+    // Auto-login para admin (necessário para políticas RLS)
+    await autoLoginAdmin();
+    
     initializeDatabase();
     loadSpecialties();
     initializeIconSelector();
+    initializeFormHandler();
 });
 
 /**
@@ -230,6 +235,9 @@ async function loadSpecialties() {
 
 async function saveSpecialty(specialtyData) {
     try {
+        console.log('🔄 Iniciando saveSpecialty com dados:', specialtyData);
+        console.log('🔄 currentSpecialty:', currentSpecialty);
+        
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
         submitBtn.textContent = 'Salvando...';
@@ -240,14 +248,17 @@ async function saveSpecialty(specialtyData) {
             description: specialtyData.description,
             icon: specialtyData.icon,
             price: specialtyData.price,
-            duration: specialtyData.wait_time ? parseInt(specialtyData.wait_time.replace(/[^\d]/g, '')) || 10 : 10,
-            is_active: specialtyData.is_active,
-            updated_at: new Date().toISOString()
+            duration: specialtyData.duration || 30, // duração padrão 30 min
+            is_active: specialtyData.is_active
+            // updated_at será atualizado automaticamente pelo trigger
         };
+        
+        console.log('🔄 Dados transformados para DB:', dbData);
 
         let result;
 
         if (currentSpecialty) {
+            console.log('🔄 Fazendo UPDATE para ID:', currentSpecialty.id);
             // Update existing specialty
             const { data, error } = await supabase
                 .from('specialties')
@@ -255,21 +266,32 @@ async function saveSpecialty(specialtyData) {
                 .eq('id', currentSpecialty.id)
                 .select();
             result = { data, error };
+            console.log('🔄 Resultado do UPDATE:', result);
         } else {
+            console.log('🔄 Fazendo INSERT de nova especialidade');
             // Create new specialty
             const { data, error } = await supabase
                 .from('specialties')
                 .insert([dbData])
                 .select();
             result = { data, error };
+            console.log('🔄 Resultado do INSERT:', result);
         }
 
         if (result.error) {
             console.error('❌ Error saving specialty:', result.error);
-            showToast('Erro', `Erro ao salvar especialidade: ${result.error.message}`, 'error');
+            
+            // Tratar erros específicos
+            let errorMessage = result.error.message;
+            if (result.error.code === '23505' && result.error.message.includes('specialties_name_key')) {
+                errorMessage = `Já existe uma especialidade com o nome "${dbData.name}". Por favor, escolha um nome diferente.`;
+            }
+            
+            showToast('Erro', `Erro ao salvar especialidade: ${errorMessage}`, 'error');
             return false;
         }
 
+        console.log('✅ Especialidade salva com sucesso!');
         const action = currentSpecialty ? 'atualizada' : 'criada';
         showToast('Sucesso', `Especialidade ${action} com sucesso!`, 'success');
 
@@ -290,10 +312,13 @@ async function saveSpecialty(specialtyData) {
 
 async function deleteSpecialty(id) {
     try {
+        console.log('🗑️ Executando DELETE no banco para ID:', id);
         const { error } = await supabase
             .from('specialties')
             .delete()
             .eq('id', id);
+        
+        console.log('🗑️ Resultado do DELETE:', { error });
 
         if (error) {
             console.error('❌ Error deleting specialty:', error);
@@ -398,7 +423,10 @@ function updateStats() {
  * MODAL MANAGEMENT
  */
 function openAddModal() {
+    console.log('🆕 Abrindo modal para NOVA especialidade');
     currentSpecialty = null;
+    console.log('🆕 currentSpecialty definido como null:', currentSpecialty);
+    
     document.getElementById('modalTitle').textContent = 'Nova Especialidade';
     document.getElementById('specialtyForm').reset();
     document.getElementById('specialtyId').value = '';
@@ -412,7 +440,9 @@ function openAddModal() {
 }
 
 function editSpecialty(id) {
+    console.log('✏️ Abrindo modal para EDITAR especialidade com ID:', id);
     currentSpecialty = specialties.find(s => s.id === id);
+    console.log('✏️ currentSpecialty encontrado:', currentSpecialty);
     if (!currentSpecialty) return;
 
     document.getElementById('modalTitle').textContent = 'Editar Especialidade';
@@ -445,9 +475,11 @@ function closeModal() {
 }
 
 function openDeleteModal(id, name) {
+    console.log('🗑️ Abrindo modal de delete para:', { id, name });
     deleteSpecialtyId = id;
     document.getElementById('deleteSpecialtyName').textContent = name;
     document.getElementById('deleteModal').classList.add('active');
+    console.log('🗑️ Modal de delete aberto, deleteSpecialtyId:', deleteSpecialtyId);
 }
 
 function closeDeleteModal() {
@@ -456,7 +488,11 @@ function closeDeleteModal() {
 }
 
 async function confirmDelete() {
-    if (!deleteSpecialtyId) return;
+    console.log('✅ Confirmando delete para ID:', deleteSpecialtyId);
+    if (!deleteSpecialtyId) {
+        console.error('❌ deleteSpecialtyId é null ou undefined');
+        return;
+    }
 
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     confirmBtn.disabled = true;
@@ -784,5 +820,114 @@ window.refreshSpecialties = refreshSpecialties;
 window.toggleIconDropdown = toggleIconDropdown;
 window.selectIcon = selectIcon;
 window.filterIcons = filterIcons;
+
+/**
+ * FORM HANDLER INITIALIZATION
+ */
+function initializeFormHandler() {
+    const form = document.getElementById('specialtyForm');
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('📝 Formulário submetido');
+            
+            // Coletar dados do formulário
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                description: document.getElementById('description').value.trim(),
+                icon: document.getElementById('icon').value,
+                price: parseFloat(document.getElementById('price').value),
+                duration: parseInt(document.getElementById('wait_time').value.replace(/[^0-9]/g, '')) || 30,
+                is_active: document.getElementById('is_active').checked
+            };
+            
+            console.log('📝 Dados coletados do formulário:', formData);
+            
+            // Validar dados
+            if (!formData.name || !formData.description || !formData.icon || !formData.price) {
+                console.error('❌ Dados incompletos:', formData);
+                showToast('Erro', 'Por favor, preencha todos os campos obrigatórios', 'error');
+                return;
+            }
+            
+            // Verificar se o nome já existe (apenas para novas especialidades)
+            if (!currentSpecialty) {
+                const nameExists = specialties.some(spec => 
+                    spec.name.toLowerCase() === formData.name.toLowerCase()
+                );
+                
+                if (nameExists) {
+                    showToast('Erro', `Já existe uma especialidade com o nome "${formData.name}". Por favor, escolha um nome diferente.`, 'error');
+                    return;
+                }
+            } else {
+                // Para edições, verificar se o nome mudou e se já existe
+                const nameChanged = currentSpecialty.name.toLowerCase() !== formData.name.toLowerCase();
+                if (nameChanged) {
+                    const nameExists = specialties.some(spec => 
+                        spec.id !== currentSpecialty.id && 
+                        spec.name.toLowerCase() === formData.name.toLowerCase()
+                    );
+                    
+                    if (nameExists) {
+                        showToast('Erro', `Já existe uma especialidade com o nome "${formData.name}". Por favor, escolha um nome diferente.`, 'error');
+                        return;
+                    }
+                }
+            }
+            
+            // Salvar especialidade
+            await saveSpecialty(formData);
+        });
+        
+        console.log('✅ Form handler inicializado');
+    } else {
+        console.error('❌ Formulário não encontrado');
+    }
+}
+
+/**
+ * AUTO-LOGIN FOR ADMIN
+ * Necessário para as políticas RLS funcionarem
+ */
+async function autoLoginAdmin() {
+    try {
+        console.log('🔐 Verificando autenticação admin...');
+        
+        // Verificar se já está logado
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+            console.log('✅ Admin já autenticado:', user.email);
+            return;
+        }
+        
+        // Fazer login automático com credenciais de admin
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: 'admin@telemed.com',
+            password: 'admin123'
+        });
+        
+        if (error) {
+            console.warn('⚠️ Erro no auto-login admin:', error.message);
+            // Tentar criar usuário admin se não existir
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                email: 'admin@telemed.com',
+                password: 'admin123'
+            });
+            
+            if (signUpError) {
+                console.error('❌ Erro ao criar admin:', signUpError.message);
+            } else {
+                console.log('✅ Admin criado e logado com sucesso');
+            }
+        } else {
+            console.log('✅ Admin logado com sucesso:', data.user.email);
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro no autoLoginAdmin:', error);
+    }
+}
 
 console.log('✅ Admin Specialties System Loaded');

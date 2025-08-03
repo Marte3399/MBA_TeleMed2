@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Sistema de Videoconsulta - TeleMed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-blue-600">TeleMed</h1>
+                </div>
+                <div class="text-sm text-gray-600">
+                    Teste Sistema de Videoconsulta
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">🧪 Teste do Sistema de Videoconsulta</h2>
+            
+            <!-- Test Controls -->
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                <!-- Patient Side -->
+                <div class="bg-blue-50 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-4">👤 Lado do Paciente</h3>
+                    
+                    <div class="space-y-4">
+                        <button id="open-preparation-btn" 
+                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            🔧 Abrir Preparação
+                        </button>
+                        
+                        <button id="join-as-patient-btn" 
+                                class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            🎥 Entrar como Paciente
+                        </button>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">ID da Consulta:</label>
+                            <input type="text" id="patient-appointment-id" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="consultation-123" value="consultation-test-123">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="patient-recording" class="mr-2">
+                                <span class="text-sm text-gray-700">Permitir gravação</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doctor Side -->
+                <div class="bg-green-50 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-green-900 mb-4">👨‍⚕️ Lado do Médico</h3>
+                    
+                    <div class="space-y-4">
+                        <button id="start-consultation-btn" 
+                                class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            🩺 Iniciar Consulta
+                        </button>
+                        
+                        <button id="join-as-doctor-btn" 
+                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            🎥 Entrar como Médico
+                        </button>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Nome do Médico:</label>
+                            <input type="text" id="doctor-name" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                   placeholder="Dr. João Silva" value="Dr. João Silva">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">CRM:</label>
+                            <input type="text" id="doctor-crm" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                   placeholder="12345-SP" value="12345-SP">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Call Controls -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">🎮 Controles da Videochamada</h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button id="toggle-audio-btn" 
+                            class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:bg-gray-400" disabled>
+                        🔊 Toggle Áudio
+                    </button>
+                    
+                    <button id="toggle-video-btn" 
+                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400" disabled>
+                        📹 Toggle Vídeo
+                    </button>
+                    
+                    <button id="open-chat-btn" 
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400" disabled>
+                        💬 Abrir Chat
+                    </button>
+                    
+                    <button id="toggle-recording-btn" 
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400" disabled>
+                        🎥 Toggle Gravação
+                    </button>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="flex items-center space-x-4">
+                        <input type="text" id="chat-message-input" 
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Digite uma mensagem..." disabled>
+                        <button id="send-message-btn" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>
+                            Enviar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call Statistics -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">📊 Estatísticas da Chamada</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600" id="call-duration">00:00</div>
+                        <div class="text-sm text-gray-600">Duração</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600" id="call-participants">0</div>
+                        <div class="text-sm text-gray-600">Participantes</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-purple-600" id="call-quality">--</div>
+                        <div class="text-sm text-gray-600">Qualidade</div>
+                    </div>
+                </div>
+                
+                <button id="get-stats-btn" 
+                        class="w-full mt-4 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:bg-gray-400" disabled>
+                    📊 Atualizar Estatísticas
+                </button>
+            </div>
+
+            <!-- End Call -->
+            <div class="text-center">
+                <button id="end-call-btn" 
+                        class="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:bg-gray-400" disabled>
+                    📞 Finalizar Chamada
+                </button>
+            </div>
+
+            <!-- Log Area -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">📝 Log de Eventos</h3>
+                <div id="log-area" class="bg-black text-green-400 p-4 rounded-lg h-64 overflow-y-auto font-mono text-sm">
+                    <div>Sistema de videoconsulta carregado...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/supabase.js"></script>
+    <script src="js/videocall.js"></script>
+    <script>
+        class VideocallTester {
+            constructor() {
+                this.callActive = false;
+                this.callStartTime = null;
+                this.statsInterval = null;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.log('🧪 Sistema de teste inicializado');
+            }
+
+            setupEventListeners() {
+                // Patient controls
+                document.getElementById('open-preparation-btn').addEventListener('click', () => this.openPreparation());
+                document.getElementById('join-as-patient-btn').addEventListener('click', () => this.joinAsPatient());
+
+                // Doctor controls
+                document.getElementById('start-consultation-btn').addEventListener('click', () => this.startConsultation());
+                document.getElementById('join-as-doctor-btn').addEventListener('click', () => this.joinAsDoctor());
+
+                // Video call controls
+                document.getElementById('toggle-audio-btn').addEventListener('click', () => this.toggleAudio());
+                document.getElementById('toggle-video-btn').addEventListener('click', () => this.toggleVideo());
+                document.getElementById('open-chat-btn').addEventListener('click', () => this.openChat());
+                document.getElementById('toggle-recording-btn').addEventListener('click', () => this.toggleRecording());
+                document.getElementById('send-message-btn').addEventListener('click', () => this.sendMessage());
+                document.getElementById('get-stats-btn').addEventListener('click', () => this.getStatistics());
+                document.getElementById('end-call-btn').addEventListener('click', () => this.endCall());
+
+                // Enter key for chat
+                document.getElementById('chat-message-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+            }
+
+            openPreparation() {
+                try {
+                    const appointmentId = document.getElementById('patient-appointment-id').value || 'test-123';
+                    const url = `videocall-preparation.html?appointment=${appointmentId}`;
+                    
+                    this.log(`🔧 Abrindo preparação: ${url}`);
+                    window.open(url, '_blank');
+                } catch (error) {
+                    this.log(`❌ Erro ao abrir preparação: ${error.message}`, 'error');
+                }
+            }
+
+            async joinAsPatient() {
+                try {
+                    const appointmentId = document.getElementById('patient-appointment-id').value || 'test-123';
+                    const enableRecording = document.getElementById('patient-recording').checked;
+                    const roomName = `consultation-${appointmentId}`;
+
+                    this.log(`👤 Paciente entrando na sala: ${roomName}`);
+                    
+                    if (!window.videoCallSystem) {
+                        throw new Error('Sistema de videochamada não disponível');
+                    }
+
+                    await window.videoCallSystem.joinVideoCall(roomName, 'patient', {
+                        appointmentId: appointmentId,
+                        enableRecording: enableRecording
+                    });
+
+                    this.onCallStarted();
+                    this.log('✅ Paciente entrou na videochamada');
+
+                } catch (error) {
+                    this.log(`❌ Erro ao entrar como paciente: ${error.message}`, 'error');
+                }
+            }
+
+            async startConsultation() {
+                try {
+                    const doctorName = document.getElementById('doctor-name').value || 'Dr. João Silva';
+                    const doctorCrm = document.getElementById('doctor-crm').value || '12345-SP';
+                    const appointmentId = 'test-123';
+
+                    this.log(`🩺 Médico iniciando consulta: ${doctorName}`);
+
+                    const doctorData = {
+                        id: 'doctor-test-123',
+                        name: doctorName,
+                        crm: doctorCrm,
+                        specialty: 'Cardiologia',
+                        email: 'doctor@telemed.com'
+                    };
+
+                    if (!window.videoCallSystem) {
+                        throw new Error('Sistema de videochamada não disponível');
+                    }
+
+                    await window.videoCallSystem.startVideoCall(appointmentId, doctorData);
+                    this.onCallStarted();
+                    this.log('✅ Consulta iniciada pelo médico');
+
+                } catch (error) {
+                    this.log(`❌ Erro ao iniciar consulta: ${error.message}`, 'error');
+                }
+            }
+
+            async joinAsDoctor() {
+                try {
+                    const doctorName = document.getElementById('doctor-name').value || 'Dr. João Silva';
+                    const doctorCrm = document.getElementById('doctor-crm').value || '12345-SP';
+                    const roomName = 'consultation-test-123';
+
+                    this.log(`👨‍⚕️ Médico entrando na sala: ${roomName}`);
+
+                    const doctorData = {
+                        id: 'doctor-test-123',
+                        name: doctorName,
+                        crm: doctorCrm,
+                        specialty: 'Cardiologia',
+                        email: 'doctor@telemed.com'
+                    };
+
+                    if (!window.videoCallSystem) {
+                        throw new Error('Sistema de videochamada não disponível');
+                    }
+
+                    await window.videoCallSystem.joinVideoCall(roomName, 'doctor', doctorData);
+                    this.onCallStarted();
+                    this.log('✅ Médico entrou na videochamada');
+
+                } catch (error) {
+                    this.log(`❌ Erro ao entrar como médico: ${error.message}`, 'error');
+                }
+            }
+
+            toggleAudio() {
+                try {
+                    if (window.videoCallSystem && window.videoCallSystem.jitsiAPI) {
+                        window.videoCallSystem.toggleAudio();
+                        this.log('🔊 Toggle áudio executado');
+                    } else {
+                        throw new Error('Videochamada não ativa');
+                    }
+                } catch (error) {
+                    this.log(`❌ Erro ao alternar áudio: ${error.message}`, 'error');
+                }
+            }
+
+            toggleVideo() {
+                try {
+                    if (window.videoCallSystem && window.videoCallSystem.jitsiAPI) {
+                        window.videoCallSystem.toggleVideo();
+                        this.log('📹 Toggle vídeo executado');
+                    } else {
+                        throw new Error('Videochamada não ativa');
+                    }
+                } catch (error) {
+                    this.log(`❌ Erro ao alternar vídeo: ${error.message}`, 'error');
+                }
+            }
+
+            openChat() {
+                try {
+                    if (window.videoCallSystem && window.videoCallSystem.jitsiAPI) {
+                        window.videoCallSystem.openChat();
+                        this.log('💬 Chat aberto');
+                    } else {
+                        throw new Error('Videochamada não ativa');
+                    }
+                } catch (error) {
+                    this.log(`❌ Erro ao abrir chat: ${error.message}`, 'error');
+                }
+            }
+
+            toggleRecording() {
+                try {
+                    if (window.videoCallSystem && window.videoCallSystem.jitsiAPI) {
+                        window.videoCallSystem.toggleRecording();
+                        this.log('🎥 Toggle gravação executado');
+                    } else {
+                        throw new Error('Videochamada não ativa');
+                    }
+                } catch (error) {
+                    this.log(`❌ Erro ao alternar gravação: ${error.message}`, 'error');
+                }
+            }
+
+            sendMessage() {
+                try {
+                    const messageInput = document.getElementById('chat-message-input');
+                    const message = messageInput.value.trim();
+
+                    if (!message) {
+                        this.log('⚠️ Mensagem vazia', 'warning');
+                        return;
+                    }
+
+                    if (window.videoCallSystem && window.videoCallSystem.jitsiAPI) {
+                        window.videoCallSystem.sendChatMessage(message);
+                        messageInput.value = '';
+                        this.log(`💬 Mensagem enviada: ${message}`);
+                    } else {
+                        throw new Error('Videochamada não ativa');
+                    }
+                } catch (error) {
+                    this.log(`❌ Erro ao enviar mensagem: ${error.message}`, 'error');
+                }
+            }
+
+            async getStatistics() {
+                try {
+                    if (window.videoCallSystem && window.videoCallSystem.jitsiAPI) {
+                        const stats = await window.videoCallSystem.getCallStatistics();
+                        
+                        if (stats) {
+                            document.getElementById('call-duration').textContent = this.formatDuration(stats.duration);
+                            document.getElementById('call-participants').textContent = stats.participants;
+                            document.getElementById('call-quality').textContent = stats.quality;
+                            
+                            this.log(`📊 Estatísticas atualizadas: ${JSON.stringify(stats)}`);
+                        }
+                    } else {
+                        throw new Error('Videochamada não ativa');
+                    }
+                } catch (error) {
+                    this.log(`❌ Erro ao obter estatísticas: ${error.message}`, 'error');
+                }
+            }
+
+            endCall() {
+                try {
+                    if (window.videoCallSystem && window.videoCallSystem.jitsiAPI) {
+                        window.videoCallSystem.endCall();
+                        this.onCallEnded();
+                        this.log('📞 Chamada finalizada');
+                    } else {
+                        throw new Error('Videochamada não ativa');
+                    }
+                } catch (error) {
+                    this.log(`❌ Erro ao finalizar chamada: ${error.message}`, 'error');
+                }
+            }
+
+            onCallStarted() {
+                this.callActive = true;
+                this.callStartTime = new Date();
+                
+                // Enable controls
+                const controls = [
+                    'toggle-audio-btn', 'toggle-video-btn', 'open-chat-btn', 
+                    'toggle-recording-btn', 'chat-message-input', 'send-message-btn',
+                    'get-stats-btn', 'end-call-btn'
+                ];
+                
+                controls.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.disabled = false;
+                    }
+                });
+
+                // Start statistics update
+                this.statsInterval = setInterval(() => {
+                    this.updateCallDuration();
+                }, 1000);
+
+                this.log('🎥 Chamada ativa - controles habilitados');
+            }
+
+            onCallEnded() {
+                this.callActive = false;
+                this.callStartTime = null;
+                
+                // Disable controls
+                const controls = [
+                    'toggle-audio-btn', 'toggle-video-btn', 'open-chat-btn', 
+                    'toggle-recording-btn', 'chat-message-input', 'send-message-btn',
+                    'get-stats-btn', 'end-call-btn'
+                ];
+                
+                controls.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.disabled = true;
+                    }
+                });
+
+                // Stop statistics update
+                if (this.statsInterval) {
+                    clearInterval(this.statsInterval);
+                    this.statsInterval = null;
+                }
+
+                // Reset display
+                document.getElementById('call-duration').textContent = '00:00';
+                document.getElementById('call-participants').textContent = '0';
+                document.getElementById('call-quality').textContent = '--';
+
+                this.log('📞 Chamada finalizada - controles desabilitados');
+            }
+
+            updateCallDuration() {
+                if (this.callStartTime) {
+                    const duration = Math.floor((new Date() - this.callStartTime) / 1000);
+                    document.getElementById('call-duration').textContent = this.formatDuration(duration);
+                }
+            }
+
+            formatDuration(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+
+            log(message, type = 'info') {
+                const logArea = document.getElementById('log-area');
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                
+                const color = {
+                    'info': 'text-green-400',
+                    'error': 'text-red-400',
+                    'warning': 'text-yellow-400',
+                    'success': 'text-blue-400'
+                }[type] || 'text-green-400';
+
+                logEntry.className = color;
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                
+                logArea.appendChild(logEntry);
+                logArea.scrollTop = logArea.scrollHeight;
+
+                console.log(`[VideocallTester] ${message}`);
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.videocallTester = new VideocallTester();
+        });
+    </script>
+</body>
+</html>

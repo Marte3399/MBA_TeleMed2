@@ -7,7 +7,24 @@
     <title>TeleMed - Telemedicina do Futuro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="js/supabase.js"></script>
+    <script>
+        // Configuração do Supabase - Projeto Correto: Marte3399's Project
+        const SUPABASE_URL = 'https://xfgpoixiqppajhgkcwse.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZ3BvaXhpcXBwYWpoZ2tjd3NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDYyNTEsImV4cCI6MjA2Njc4MjI1MX0.5zEXy_CnqnJYxEcdi_L3Qd_VrgyM2jiB40VLSr6brXY';
+        
+        // Inicializar cliente Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Verificar se o Supabase foi inicializado corretamente
+        if (!supabase) {
+            console.error('Erro ao inicializar Supabase');
+        } else {
+            console.log('Supabase inicializado com sucesso - Projeto:', SUPABASE_URL);
+        }
+    </script>
+    <script src="js/supabase.js?v=20250803"></script>
+    <script src="js/specialties.js"></script>
+    <script src="js/medical-records.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -613,7 +630,7 @@
 
                 const { data, error } = await supabase
                     .from('specialties')
-                    .select('id, name, description, icon, price, duration, is_active')
+                    .select('id, name, description, icon, price, is_active')
                     .eq('is_active', true)
                     .order('name');
 
@@ -1153,31 +1170,35 @@
             if (!currentAppointment) return;
             
             try {
-                console.log('Iniciando videochamada...');
+                console.log('Redirecionando para preparação da videochamada...');
                 
                 // Fechar notificação
                 document.getElementById('consultationNotification').classList.add('hidden');
                 document.body.style.overflow = 'auto';
                 
-                // Gerar nome da sala
-                const roomName = `consultation-${currentAppointment.id}`;
+                // Preparar dados da consulta
+                const appointmentId = currentAppointment.id || `appointment-${Date.now()}`;
                 
-                // Abrir Jitsi Meet em nova aba
-                const jitsiUrl = `https://8x8.vc/${roomName}`;
-                const videoWindow = window.open(jitsiUrl, '_blank', 'width=1200,height=800');
+                // Salvar dados da consulta no localStorage para a página de preparação
+                localStorage.setItem('currentAppointmentId', appointmentId);
+                localStorage.setItem('currentAppointmentData', JSON.stringify(currentAppointment));
+                
+                // Redirecionar para página de preparação
+                const preparationUrl = `videocall-preparation.html?appointment=${appointmentId}`;
+                const videoWindow = window.open(preparationUrl, '_blank', 'width=1200,height=800');
                 
                 if (videoWindow) {
-                    console.log('Videochamada aberta:', roomName);
+                    console.log('Página de preparação aberta:', appointmentId);
                     
                     // Mostrar confirmação
                     const confirmationDiv = document.createElement('div');
-                    confirmationDiv.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50';
+                    confirmationDiv.className = 'fixed top-4 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg z-50';
                     confirmationDiv.innerHTML = `
                         <div class="flex items-center">
-                            <span class="text-xl mr-2">✅</span>
+                            <span class="text-xl mr-2">🔧</span>
                             <div>
-                                <div class="font-bold">Videochamada Iniciada!</div>
-                                <div class="text-sm opacity-90">Sala: ${roomName}</div>
+                                <div class="font-bold">Preparação Iniciada!</div>
+                                <div class="text-sm opacity-90">Teste seus equipamentos antes da consulta</div>
                             </div>
                         </div>
                     `;
@@ -1191,12 +1212,12 @@
                     }, 5000);
                     
                 } else {
-                    throw new Error('Não foi possível abrir a videochamada. Verifique se pop-ups estão bloqueados.');
+                    throw new Error('Não foi possível abrir a preparação. Verifique se pop-ups estão bloqueados.');
                 }
                 
             } catch (error) {
-                console.error('Erro ao iniciar videochamada:', error);
-                alert('Erro ao iniciar videochamada: ' + error.message);
+                console.error('Erro ao iniciar preparação:', error);
+                alert('Erro ao iniciar preparação: ' + error.message);
             }
         }
 
@@ -1250,11 +1271,160 @@
         });
     </script>
 
+    <!-- Modal Informativa sobre o Atendimento -->
+    <div id="infoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-8 max-w-lg w-full mx-4 transform transition-all">
+            <div class="text-center mb-6">
+                <div class="text-4xl mb-4">🩺</div>
+                <h2 class="text-2xl font-bold text-gray-900">Como Funciona o Atendimento</h2>
+                <p class="text-gray-600">Telemedicina rápida e segura</p>
+            </div>
+
+            <!-- Detalhes da Especialidade Selecionada -->
+            <div id="selectedSpecialtyInfo" class="bg-blue-50 rounded-lg p-4 mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium">Especialidade:</span>
+                    <span id="infoSpecialtyName" class="text-blue-700 font-semibold"></span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium">Duração:</span>
+                    <span id="infoDuration" class="text-gray-700">30 minutos</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium">Médicos Online:</span>
+                    <span id="infoDoctorsOnline" class="text-green-600 font-medium"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-medium text-lg">Valor:</span>
+                    <span id="infoPrice" class="text-2xl font-bold text-blue-600"></span>
+                </div>
+            </div>
+
+            <!-- Passos do Atendimento -->
+            <div class="space-y-4 mb-6">
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm">1</div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Faça Login</h3>
+                        <p class="text-gray-600 text-sm">Entre na sua conta ou crie uma nova para continuar</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm">2</div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Realize o Pagamento</h3>
+                        <p class="text-gray-600 text-sm">Pague com cartão de crédito de forma segura</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm">3</div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Entre na Fila</h3>
+                        <p class="text-gray-600 text-sm">Aguarde ser chamado pelo próximo médico disponível</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm">4</div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Videoconsulta</h3>
+                        <p class="text-gray-600 text-sm">Converse com o médico por videochamada</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="flex space-x-3">
+                <button onclick="closeInfoModal()" 
+                        class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </button>
+                <button onclick="redirectToLogin()" 
+                        class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                    Fazer Login
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts do Sistema de Pagamentos e Videochamada -->
     <script src="js/payments.js"></script>
     <script src="js/queue.js"></script>
     <script src="js/videocall.js"></script>
     <script src="js/realtime-queue.js"></script>
+
+    <script>
+        // Função para abrir modal informativa
+        function openInfoModal(specialtyData) {
+            document.getElementById('infoSpecialtyName').textContent = specialtyData.name;
+            document.getElementById('infoDuration').textContent = specialtyData.duration + ' minutos';
+            document.getElementById('infoDoctorsOnline').textContent = specialtyData.doctorsOnline + ' médicos';
+            document.getElementById('infoPrice').textContent = 'R$ ' + specialtyData.price.toFixed(2);
+            
+            document.getElementById('infoModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Função para fechar modal informativa
+        function closeInfoModal() {
+            document.getElementById('infoModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Função para redirecionar para login
+        function redirectToLogin() {
+            window.location.href = 'auth.html';
+        }
+
+        // Sobrescrever a função selectSpecialty para abrir modal informativa na index
+        function selectSpecialty(specialtyId, specialtyName, price) {
+            console.log(`Especialidade selecionada: ${specialtyName} (ID: ${specialtyId}) - R$ ${price}`);
+            
+            // Verificar se estamos na página index
+            const isIndexPage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || window.location.pathname === '';
+            
+            if (isIndexPage) {
+                // Na página index, abrir modal informativa
+                const specialtyData = {
+                    id: specialtyId,
+                    name: specialtyName,
+                    price: price,
+                    duration: 30,
+                    doctorsOnline: Math.floor(Math.random() * 10) + 1
+                };
+                openInfoModal(specialtyData);
+            } else {
+                // Em outras páginas (dashboard), abrir modal de pagamento
+                const specialtyData = {
+                    id: specialtyId,
+                    name: specialtyName,
+                    price: price,
+                    duration: 30,
+                    doctorsOnline: Math.floor(Math.random() * 10) + 1
+                };
+                
+                if (window.paymentSystem) {
+                    window.paymentSystem.openPaymentModal(specialtyData);
+                } else {
+                    console.error('Sistema de pagamentos não inicializado');
+                }
+            }
+        }
+
+        // Fechar modal ao clicar fora dela
+        document.addEventListener('click', function(event) {
+            const infoModal = document.getElementById('infoModal');
+            if (event.target === infoModal) {
+                closeInfoModal();
+            }
+        });
+
+        // Fechar modal com tecla ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeInfoModal();
+            }
+        });
+    </script>
 </body>
 
 </html>

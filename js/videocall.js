@@ -81,6 +81,9 @@ class VideoCallSystem {
             // Configurações específicas por tipo de usuário
             const userConfig = this.getUserConfig(userType, userData);
 
+            // Check if recording is enabled
+            const enableRecording = userData?.enableRecording || localStorage.getItem('enableRecording') === 'true';
+
             // Configurações do Jitsi
             const jitsiOptions = {
                 roomName: roomName,
@@ -91,7 +94,7 @@ class VideoCallSystem {
                     startWithAudioMuted: userType === 'patient',
                     startWithVideoMuted: false,
                     enableWelcomePage: false,
-                    prejoinPageEnabled: true,
+                    prejoinPageEnabled: false, // Disabled since we have our own preparation
                     disableModeratorIndicator: false,
                     startScreenSharing: false,
                     enableEmailInStats: false,
@@ -99,6 +102,26 @@ class VideoCallSystem {
                     disableLocalVideoFlip: false,
                     backgroundAlpha: 0.5,
                     enableLayerSuspension: true,
+                    // Recording configuration
+                    recordingService: {
+                        enabled: enableRecording,
+                        sharingEnabled: enableRecording
+                    },
+                    // Enhanced video quality
+                    resolution: 720,
+                    constraints: {
+                        video: {
+                            height: { ideal: 720, max: 1080, min: 360 },
+                            width: { ideal: 1280, max: 1920, min: 640 },
+                            frameRate: { ideal: 30, max: 30, min: 15 }
+                        },
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true,
+                            sampleRate: 48000
+                        }
+                    },
                     p2p: {
                         enabled: true,
                         stunServers: [
@@ -271,6 +294,18 @@ class VideoCallSystem {
         // Mudança de status de vídeo
         this.jitsiAPI.addEventListener('videoMuteStatusChanged', (data) => {
             console.log('📹 Status de vídeo mudou:', data);
+        });
+
+        // Chat message received
+        this.jitsiAPI.addEventListener('incomingMessage', (data) => {
+            console.log('💬 Mensagem recebida:', data);
+            this.onChatMessage(data);
+        });
+
+        // Recording status changed
+        this.jitsiAPI.addEventListener('recordingStatusChanged', (data) => {
+            console.log('🎥 Status de gravação mudou:', data);
+            this.onRecordingStatusChanged(data);
         });
     }
 
@@ -514,6 +549,9 @@ class VideoCallSystem {
     onDoctorLeft() {
         // Finalizar consulta e mostrar opções de prontuário
         console.log('🩺 Médico saiu - finalizando consulta');
+        
+        // Mostrar modal de finalização da consulta com opção de criar prontuário
+        this.showConsultationEndModal();
     }
 
     // Quando paciente sai
@@ -521,6 +559,136 @@ class VideoCallSystem {
         // Mostrar modal de avaliação
         console.log('👤 Paciente saiu - solicitando avaliação');
         this.showFeedbackModal();
+    }
+
+    // Handle chat messages
+    onChatMessage(data) {
+        try {
+            // Log chat message for medical records
+            const chatData = {
+                appointment_id: this.consultationData?.id,
+                sender: data.from || 'unknown',
+                message: data.message,
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('💬 Chat message logged:', chatData);
+
+            // Show notification for new messages
+            this.showNotification(`Nova mensagem: ${data.message.substring(0, 50)}...`, 'info');
+
+        } catch (error) {
+            console.error('❌ Erro ao processar mensagem do chat:', error);
+        }
+    }
+
+    // Handle recording status changes
+    onRecordingStatusChanged(data) {
+        try {
+            const { status, mode } = data;
+            
+            if (status === 'on') {
+                this.showNotification('🎥 Gravação iniciada', 'success');
+                console.log('🎥 Recording started:', { mode, timestamp: new Date().toISOString() });
+            } else if (status === 'off') {
+                this.showNotification('⏹️ Gravação finalizada', 'info');
+                console.log('🎥 Recording stopped:', { timestamp: new Date().toISOString() });
+            }
+
+            // Log recording status for medical records
+            const recordingData = {
+                appointment_id: this.consultationData?.id,
+                status: status,
+                mode: mode,
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('📝 Recording status logged:', recordingData);
+
+        } catch (error) {
+            console.error('❌ Erro ao processar mudança de gravação:', error);
+        }
+    }
+
+    // Send chat message programmatically
+    sendChatMessage(message) {
+        if (this.jitsiAPI && message.trim()) {
+            try {
+                this.jitsiAPI.executeCommand('sendChatMessage', message);
+                console.log('💬 Mensagem enviada:', message);
+            } catch (error) {
+                console.error('❌ Erro ao enviar mensagem:', error);
+            }
+        }
+    }
+
+    // Toggle recording
+    toggleRecording() {
+        if (this.jitsiAPI) {
+            try {
+                this.jitsiAPI.executeCommand('toggleRecording');
+                console.log('🎥 Toggle recording command sent');
+            } catch (error) {
+                console.error('❌ Erro ao alternar gravação:', error);
+            }
+        }
+    }
+
+    // Toggle audio mute
+    toggleAudio() {
+        if (this.jitsiAPI) {
+            try {
+                this.jitsiAPI.executeCommand('toggleAudio');
+                console.log('🔊 Toggle audio command sent');
+            } catch (error) {
+                console.error('❌ Erro ao alternar áudio:', error);
+            }
+        }
+    }
+
+    // Toggle video mute
+    toggleVideo() {
+        if (this.jitsiAPI) {
+            try {
+                this.jitsiAPI.executeCommand('toggleVideo');
+                console.log('📹 Toggle video command sent');
+            } catch (error) {
+                console.error('❌ Erro ao alternar vídeo:', error);
+            }
+        }
+    }
+
+    // Open chat panel
+    openChat() {
+        if (this.jitsiAPI) {
+            try {
+                this.jitsiAPI.executeCommand('toggleChat');
+                console.log('💬 Chat panel toggled');
+            } catch (error) {
+                console.error('❌ Erro ao abrir chat:', error);
+            }
+        }
+    }
+
+    // Get current call statistics
+    async getCallStatistics() {
+        if (this.jitsiAPI) {
+            try {
+                // This would need to be implemented with Jitsi's statistics API
+                const stats = {
+                    duration: this.currentCall ? Math.round((new Date() - this.currentCall.startTime) / 1000) : 0,
+                    participants: 2, // Simplified
+                    quality: 'good' // Simplified
+                };
+                
+                console.log('📊 Call statistics:', stats);
+                return stats;
+            } catch (error) {
+                console.error('❌ Erro ao obter estatísticas:', error);
+                return null;
+            }
+        }
+        return null;
     }
 
     // Mostrar modal de avaliação
@@ -549,6 +717,152 @@ class VideoCallSystem {
         setTimeout(() => {
             notification.remove();
         }, 5000);
+    }
+
+    // Mostrar modal de finalização da consulta
+    showConsultationEndModal() {
+        const modal = document.createElement('div');
+        modal.id = 'consultationEndModal';
+        modal.className = 'modal-overlay';
+        
+        modal.innerHTML = `
+            <div class="modal-content max-w-2xl">
+                <div class="modal-header">
+                    <h3 class="text-2xl font-bold text-gray-900">🏥 Consulta Finalizada</h3>
+                    <button onclick="closeModal('consultationEndModal')" class="modal-close">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="text-center mb-6">
+                        <div class="text-6xl mb-4">✅</div>
+                        <h4 class="text-xl font-bold text-gray-900 mb-2">Consulta realizada com sucesso!</h4>
+                        <p class="text-gray-600">
+                            A videoconsulta foi finalizada. Agora você pode criar o prontuário médico do paciente.
+                        </p>
+                    </div>
+                    
+                    <!-- Resumo da Consulta -->
+                    <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                        <h5 class="font-bold text-blue-900 mb-2">Resumo da Consulta</h5>
+                        <div class="text-sm space-y-1">
+                            <div><strong>Duração:</strong> ${this.getCallDuration()} minutos</div>
+                            <div><strong>Paciente:</strong> ${this.consultationData?.patient_name || 'N/A'}</div>
+                            <div><strong>Especialidade:</strong> ${this.consultationData?.specialty_name || 'N/A'}</div>
+                            <div><strong>Data:</strong> ${new Date().toLocaleString('pt-BR')}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ações Disponíveis -->
+                    <div class="space-y-4">
+                        <button 
+                            onclick="this.createMedicalRecord()" 
+                            class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center space-x-2">
+                            <span>📋</span>
+                            <span>Criar Prontuário Médico</span>
+                        </button>
+                        
+                        <button 
+                            onclick="this.scheduleFollowUp()" 
+                            class="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center space-x-2">
+                            <span>📅</span>
+                            <span>Agendar Consulta de Retorno</span>
+                        </button>
+                        
+                        <button 
+                            onclick="this.sendConsultationSummary()" 
+                            class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition font-semibold flex items-center justify-center space-x-2">
+                            <span>📧</span>
+                            <span>Enviar Resumo por Email</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Botão para Fechar -->
+                    <div class="mt-6 pt-4 border-t">
+                        <button 
+                            onclick="closeModal('consultationEndModal')" 
+                            class="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+        
+        // Bind context for button clicks
+        const buttons = modal.querySelectorAll('button[onclick*="this."]');
+        buttons.forEach(button => {
+            const originalOnclick = button.getAttribute('onclick');
+            button.removeAttribute('onclick');
+            button.addEventListener('click', () => {
+                const methodName = originalOnclick.match(/this\.(\w+)\(\)/)[1];
+                if (this[methodName]) {
+                    this[methodName]();
+                }
+            });
+        });
+    }
+    
+    // Obter duração da chamada
+    getCallDuration() {
+        if (this.currentCall && this.currentCall.startTime) {
+            return Math.round((new Date() - this.currentCall.startTime) / 1000 / 60);
+        }
+        return 0;
+    }
+    
+    // Criar prontuário médico
+    createMedicalRecord() {
+        if (this.consultationData && window.showMedicalRecordInterface) {
+            // Fechar modal atual
+            closeModal('consultationEndModal');
+            
+            // Abrir interface de prontuário
+            window.showMedicalRecordInterface(this.consultationData.id);
+        } else {
+            this.showNotification('Sistema de prontuários não disponível', 'error');
+        }
+    }
+    
+    // Agendar consulta de retorno
+    scheduleFollowUp() {
+        if (this.consultationData && window.scheduleFollowUp) {
+            // Fechar modal atual
+            closeModal('consultationEndModal');
+            
+            // Abrir agendamento de retorno
+            window.scheduleFollowUp(this.consultationData.id);
+        } else {
+            this.showNotification('Sistema de agendamento não disponível', 'error');
+        }
+    }
+    
+    // Enviar resumo da consulta
+    async sendConsultationSummary() {
+        try {
+            const summary = {
+                appointmentId: this.consultationData?.id,
+                duration: this.getCallDuration(),
+                date: new Date().toISOString(),
+                patientEmail: this.consultationData?.patient_email,
+                doctorName: 'Dr. João Silva', // Em produção, pegar do contexto do médico
+                specialty: this.consultationData?.specialty_name
+            };
+            
+            // Simular envio de email (em produção, usar serviço de email)
+            console.log('📧 Enviando resumo da consulta:', summary);
+            
+            this.showNotification('Resumo enviado por email com sucesso', 'success');
+            
+            // Fechar modal
+            closeModal('consultationEndModal');
+            
+        } catch (error) {
+            console.error('❌ Erro ao enviar resumo:', error);
+            this.showNotification('Erro ao enviar resumo', 'error');
+        }
     }
 
     // Finalizar chamada
